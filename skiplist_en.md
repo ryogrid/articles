@@ -1,4 +1,4 @@
-# Recipe of on-disk concurrent skip list for RDBMS's Index
+# Implementation of on-disk concurrent skip list for RDBMS's Index
 - The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
 - I have not been able to find any web pages, including English ones, that provide the kind of information shared in this document in a summarized form, so I hope this document will be useful to many people as valuable knowledge and insight
 
