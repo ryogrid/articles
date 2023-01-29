@@ -77,10 +77,10 @@
 ## Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
 
 ## Background of development
-- In the process of creating my own RDB, I thought of implementing B-tree indexes which are widely used in major RDBs, but as I have explained so far, I found that it is very difficult to implement B-tree indexes to the point where parallel access is possible. In order to implement a skip list index, I created a container to be used inside the index
-  - For this reason, the implementation exists in the code base of SamehadaDB, of which I am the main developer
-  - [Reference] Level DB (on-disk KVS), which is also used in Google Chrome and other applications, uses Skip List in its index (on-memory) to improve access efficiency to entry data in memory (not on disk)
-- Therefore, some of the explanations in this document may be influenced by the purpose of the indexes, since they are designed and specified to be used as indexes for RDBs
+- In the process of creating my own RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as I have explained so far, I found that it is very difficult to implement B+tree indexes to the point where parallel access is possible. So, In order to implement a Skip List index, I implemented a container to be used inside the index
+  - For this reason, the implementation exists in the code base of SamehadaDB, of which author is the main developer
+  - [Reference] LevelDB (on-disk KVS), which is also used in Google Chrome and other applications, uses Skip List in its index (on-memory) to improve access efficiency to entry data in memory (not on disk)
+- Therefore, some of the explanations and design in this document may be influenced by the purpose described above
 - Nevertheless, it is designed to be generally general-purpose, and it should not be difficult for viewers to change or extend many parts of it
 
 ## External Specifications
