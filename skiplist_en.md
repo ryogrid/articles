@@ -60,7 +60,7 @@
       - The necessary processing includes updating the connection information between nodes and moving the retained entries between nodes
       - The base of Skip List is a linked list of a single node, and even if an entry is added or deleted, its position is never changed
 
-## Bad point of (simple) Skip List
+## Bad point of (naive) Skip List
 - Because of its probabilistic data structure and lack of rebalancing, there are many cases where access cannot be performed in log N steps, compared to the B-tree variants
 - Performance for parallel access is harder to achieve than B-tree variants
   - (You may want to read the section on parallel access before coming back) 
