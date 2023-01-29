@@ -33,12 +33,12 @@
     - Node split and delete are necessary, but merge is not necessary
 
 
-## What is On-Disk Concurrent Skip List (in this document)?
+## What is On-Disk Concurrent Skip List in this document?
 - On-disk
-  - On-disk parallel Skip List is an on-disk list that is basically operated while data is still in memory
-  - In contrast to the on-memory 00, the on-disk 00 changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage such as SSD or HDD, or conversely being loaded into memory
+  - Take on-memory XXX is basically operated while data is still in memory
+  - On-disk XXX changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage, or conversely being loaded into memory
   - It may be said that the data is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory, etc
-- **Parallel (≒parallel) Accessible**
+- **Concurrent (≒parallel) Accessible**
   - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data
   - <=> If the entire data structure is controlled by a single lock, only one thread can access it at a time
 - Skip List
