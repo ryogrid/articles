@@ -33,27 +33,27 @@
     - Node split and delete are necessary, but merge is not necessary
 
 
-## What is On-Disk Concurrent Skip List in this document?
+## What is on-disk concurrent Skip List in this document?
 - On-disk
   - Take on-memory XXX is basically operated while data is still in memory
   - On-disk XXX changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage, or conversely being loaded into memory
-  - It may be said that the data is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory, etc
+  - It may be said that a program which is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory and drowing on it
 - **Concurrent (≒parallel) Accessible**
   - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data
-  - <=> If the entire data structure is controlled by a single lock, only one thread can access it at a time
+  - <=> If the entire data structure is controlled by a single lock, only one thread can access it at the same time
 - Skip List
 
 ## Good points of Skip List (from the perspective of handling concurrent access)
-- It is relatively simple to deal with concurrent access.
-- In this document, locking for exclusion control is done on a per-node basis
+- It is relatively simple to deal with concurrent access
+- In this document, locking for exclusive control is done on a per-node granularity
   - (In B-tree variants, tree locking may be used in some cases, but the basic principle is the same)
 - B-tree variants
-  - Code to perform rebalancing with appropriate exclusion control is complex (difficult to understand)
+  - Implemantaton of code to perform rebalancing with appropriate exclusive control is complex (difficult to understand)
   - It is necessary to deal with cases where the update range for rebalancing is extensive
   - Locks must be acquired while taking care to avoid deadlocks, but the sequence itself tends to be difficult to understand
 - Skip List
   - Lower complexity than B-trees
-    - In both systems, most update operations search for nodes to insert or delete data while performing exclusion control, and then update the contents of the found nodes as needed to complete the process
+    - In both systems, most update operations search for nodes to insert or delete data while performing exclusive control, and then update the contents of the found nodes as needed to complete the process
     - The hardest part of the implementation is when updating one node requires updating other nodes as well...
       - In the B-tree variants, the need for rebalancing also causes node splits and merges
       - In the Skip List, a split occurs when there is no free space on a node to hold an entry, and a node deletion occurs when the number of entries in a node reaches zero, but since rebalancing is not performed, the process is relatively simple
@@ -371,9 +371,9 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 ![remove.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/7b76a422-7fe2-3a4e-cd29-701a65faf3b9.png)
 ![contails.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/9a549a05-de09-b5e4-52a8-61ab417c51cd.png)
 
-- The prefix "lazy" is not limited to Skip List, but is used to refer to exclusion control methods such as the type in this example, and should be taken to mean "lazy
-- In the book, the keyword "optimistic" is also used, but it seems more appropriate in the context of exclusion control methods
-- Although a detailed explanation of the implementation example is omitted, the point to keep in mind is the method of exclusion control, which is realized in the following manner
+- The prefix "lazy" is not limited to Skip List, but is used to refer to exclusive control methods such as the type in this example, and should be taken to mean "lazy
+- In the book, the keyword "optimistic" is also used, but it seems more appropriate in the context of exclusive control methods
+- Although a detailed explanation of the implementation example is omitted, the point to keep in mind is the method of exclusive control, which is realized in the following manner
   - The locks on the nodes to be updated are not held in advance, but are obtained by traversing the Skip List from the top, and only when a node needs to be added or deleted
     - The target nodes here are all the nodes corresponding to the stations that were changed during the process of traversing the list (to use the previous example)
   - The nodes to be updated are locked one by one, and checked to see if they have been updated by other threads
@@ -384,7 +384,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 
 ## Apply the parallel access method described in the TAoMP book to the multiple-entry per node version
 - This section focuses on the processing required to support concurrent access for the sequential version and points to be noted when supporting concurrent access
-- Fundamentals of Exclusion Control Design
+- Fundamentals of exclusive control Design
     - Methods of exclusive control
       - Read-write locking (Mutex capable) is used.
         - Mutexes that are reentrant (the same thread does not block even if it acquires the same lock multiple times without releasing it) should not be used, as performance will be degraded in principle
