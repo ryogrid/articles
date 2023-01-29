@@ -1,30 +1,30 @@
 # Implementation of on-disk concurrent skip list for DBMS's Index
 - The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
-- I have not been able to find any web pages, including English ones, that provide the kind of information shared in this document in a summarized form, so I hope this document will be useful to many people as valuable knowledge and insight
+- I couldn't find any web pages that provide same kind of information shared in this document in a summarized form, so this document will be useful to some people as valuable knowledge and insight
 
 # About Skip List
 
 ## What is Skip List?
-- A probabilistic data structure that realizes a so-called Key-Value store
-  - It is unique in that it is "probabilistic" compared to other data structures that provide similar functionality
-  - Data can be searched (retrieved), inserted, and deleted in O (log N)
-    - The bottom of log can be varied by design, but most are 2 or 4; the author designed it to be 2
-- As with [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree), stored data can be retrieved efficiently in sorted order based on the definition of the size of the data used as the Key
+- A probabilistic data structure that realizes Key-Value store
+  - "probabilistic" data structure is unique compared to other data structures that provide similar functionality
+  - Data can be searched (got), inserted, and deleted in O (log N)
+    - The base of logarithm can be varied by design, but most are 2 or 4; the author designed it to be 2
+- stored data can be retrieved efficiently in sorted order based on the definition of the size of the data used as the Key as same as [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree)
   - e.g.) Given Key-A and Key-B where A < B, it is possible to retrieve the values stored with x satisfying A <= x <= B in ascending order of the key
 - Overview of Data Structure
-  - Basically, it is just a concatenated list, and a linear search can be performed to reach the node that holds the desired entry.
+  - Basically, it is just a concatenated list, and a linear search can be performed to reach the node that holds the desired entry
   - However, as the name "Skip" implies, when creating a node, a path is created that allows skipping some nodes with a certain probability
     - As a result, it is like moving from the first station on the train to the destination while taking the limited express, express, local, and local train in that order
-    - To use the above analogy, creating a path is like recognizing each different train service as a stop (among the services from each stop to express, the probability of recognizing a stop as a stop is determined)
-    - Each operation is distinguished by its level, and the number of stops (in terms of probability) is smaller for those with higher levels. The level at which a train stops at each station is referred to as level 1 in this document
+    - To use the above analogy, creating a path is like recognizing each different train service as a stop (among the services from each stop to express, the probability of recognizing a station as a stop is determined)
+    - Each operation is distinguished by its level, and the number of stops is smaller for those with higher levels. The level at which a train stops at each station is referred to as level 1 in this document
   - For details, please refer to Wikipedia's [skip list](https://en.wikipedia.org/wiki/Skip_list) page
     - The image below is from the above Wkipedia page
 ![skiplist.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/c22bbd02-9c52-c3ed-7edb-25d5ed0762cd.png)
 
 ## Good points of Skip List
-- It can provide the same level of functionality and access performance as B+ tree and others, yet is relatively simple to implement.
-- B-tree system
-  - The data structure of the B-tree system is a balanced tree, so if the distribution of data in the tree structure becomes unbalanced, a process called rebalancing is performed
+- It can provide the same level of functionality and access performance as B+ tree, yet is relatively simple to implement.
+- B-tree variants
+  - The data structure of the B-tree variants is a balanced tree, so if the distribution of data in the tree structure becomes unbalanced, a process called rebalancing is performed
   - Internal processes called node split and merge (or another type of process that can achieve the same purpose) are performed as needed
   - Basically, rebalancing occurs when inserting and deleting data, which are update operations, but the implementation of merge processing for deletion tends to be particularly complex
   - Unless a special design is adopted, the implementation should take into account the case where the rebalancing process is not a local update in a tree, but a wide-ranging update
@@ -36,7 +36,7 @@
 ## What is On-Disk Concurrent Skip List (in this document)?
 - On-disk
   - On-disk parallel Skip List is an on-disk list that is basically operated while data is still in memory
-  - In contrast to the on-memory 00, the on-disk 00 changes the location of the sub-element (node in the B-tree system and Skip List) that handles stored data, such as being written to non-volatile storage such as SSD or HDD, or conversely being loaded into memory
+  - In contrast to the on-memory 00, the on-disk 00 changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage such as SSD or HDD, or conversely being loaded into memory
   - It may be said that the data is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory, etc
 - **Parallel (≒parallel) Accessible**
   - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data
@@ -46,8 +46,8 @@
 ## Good points of Skip List (from the perspective of handling concurrent access)
 - It is relatively simple to deal with concurrent access.
 - In this document, locking for exclusion control is done on a per-node basis
-  - (In B-tree system, tree locking may be used in some cases, but the basic principle is the same)
-- B-tree system
+  - (In B-tree variants, tree locking may be used in some cases, but the basic principle is the same)
+- B-tree variants
   - Code to perform rebalancing with appropriate exclusion control is complex (difficult to understand)
   - It is necessary to deal with cases where the update range for rebalancing is extensive
   - Locks must be acquired while taking care to avoid deadlocks, but the sequence itself tends to be difficult to understand
@@ -55,19 +55,19 @@
   - Lower complexity than B-trees
     - In both systems, most update operations search for nodes to insert or delete data while performing exclusion control, and then update the contents of the found nodes as needed to complete the process
     - The hardest part of the implementation is when updating one node requires updating other nodes as well...
-      - In the B-tree system, the need for rebalancing also causes node splits and merges
+      - In the B-tree variants, the need for rebalancing also causes node splits and merges
       - In the Skip List, a split occurs when there is no free space on a node to hold an entry, and a node deletion occurs when the number of entries in a node reaches zero, but since rebalancing is not performed, the process is relatively simple
       - The necessary processing includes updating the connection information between nodes and moving the retained entries between nodes
       - The base of Skip List is a linked list of a single node, and even if an entry is added or deleted, its position is never changed
 
 ## Bad point of (simple) Skip List
-- Because of its probabilistic data structure and lack of rebalancing, there are many cases where access cannot be performed in log N steps, compared to the B-tree system
-- Performance for parallel access is harder to achieve than B-tree systems
+- Because of its probabilistic data structure and lack of rebalancing, there are many cases where access cannot be performed in log N steps, compared to the B-tree variants
+- Performance for parallel access is harder to achieve than B-tree variantss
   - (You may want to read the section on parallel access before coming back) 
-  - On Skip List and B-tree system, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock on a node first, it will cause a contention with the other threads and the throughput of parallel access is reduced due to the contention
+  - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock on a node first, it will cause a contention with the other threads and the throughput of parallel access is reduced due to the contention
   - However, in the Skip List, if a thread acquires a W-lock on a node, other threads that want to pass through the node will block the thread waiting to acquire the lock on all levels up to the level of the node
-    - Fundamental difference may be that node and leaf locks are not separated in Skip List unlike B-tree system
-    - (I think it is necessary to take into account that there may be areas that become inaccessible when rebalancing in the case of B-tree systems)
+    - Fundamental difference may be that node and leaf locks are not separated in Skip List unlike B-tree variants
+    - (I think it is necessary to take into account that there may be areas that become inaccessible when rebalancing in the case of B-tree variantss)
 - Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping, and **other nodes**
   - (e.g., a node to be fetched to determine if it has "gone too far," as described below)
 - Range scan (iterating by specifying a range) of entries can only be performed in the direction decided at the time of design.
@@ -583,7 +583,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - Therefore, lock release must be performed before UnpinPage
     - (The implementation in SamehadaDB is NG code. However, due to the PM implementation and the fact that Go is a GC language, even if the page is cached out, the instance of the Page type will exist in memory until GC is run, and the reference will remain at the point where the lock is released, so it will not be GC'd. Therefore, it works...)
 
-## [Reference] Implementation
+## [Reference] My implementation
 - Although there are some differences from the design described in this document, an implementation exists in RDB (SamehadaDB, made in Go language), which is being developed mainly by the author
   - Source files corresponding to the Skip List implementation and the main related source files
     - [skip_list.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list.go)
