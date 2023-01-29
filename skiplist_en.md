@@ -24,7 +24,7 @@
 ## Good points of Skip List
 - It can provide the same level of functionality and access performance as B+ tree, yet is relatively simple to implement.
 - B-tree variants
-  - The data structure of the B-tree variants is a balanced tree, so if the distribution of data in the tree structure becomes unbalanced, a process called rebalancing is performed
+  - The data structure of the B-tree variants are a balanced tree, so if the distribution of data in the tree structure becomes unbalanced, a process called rebalancing is performed
   - Internal processes called node split and merge (or another type of process that can achieve the same purpose) are performed as needed
   - Basically, rebalancing occurs when inserting and deleting data, which are update operations, but the implementation of merge processing for deletion tends to be particularly complex
   - Unless a special design is adopted, the implementation should take into account the case where the rebalancing process is not a local update in a tree, but a wide-ranging update
@@ -62,12 +62,12 @@
 
 ## Bad point of (simple) Skip List
 - Because of its probabilistic data structure and lack of rebalancing, there are many cases where access cannot be performed in log N steps, compared to the B-tree variants
-- Performance for parallel access is harder to achieve than B-tree variantss
+- Performance for parallel access is harder to achieve than B-tree variants
   - (You may want to read the section on parallel access before coming back) 
   - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock on a node first, it will cause a contention with the other threads and the throughput of parallel access is reduced due to the contention
   - However, in the Skip List, if a thread acquires a W-lock on a node, other threads that want to pass through the node will block the thread waiting to acquire the lock on all levels up to the level of the node
     - Fundamental difference may be that node and leaf locks are not separated in Skip List unlike B-tree variants
-    - (I think it is necessary to take into account that there may be areas that become inaccessible when rebalancing in the case of B-tree variantss)
+    - (I think it is necessary to take into account that there may be areas that become inaccessible when rebalancing in the case of B-tree variants)
 - Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping, and **other nodes**
   - (e.g., a node to be fetched to determine if it has "gone too far," as described below)
 - Range scan (iterating by specifying a range) of entries can only be performed in the direction decided at the time of design.
