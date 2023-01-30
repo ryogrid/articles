@@ -94,14 +94,14 @@
     - Any data format can be supported as possible as it is expressible in KV type, but the data format to be used as Key must be implemented with large/small comparison
   - Key data format is fixed to the type specified at the time of Skip List instantiation
   - Keys are processed as unique. Multiple entries with keys that are recognized as same value by the comparison function cannot coexist. For example, Inserting an entry with the same key overwrites the Value (Insert = UPSERT).
-    - (As a container used in RDB indexes, it is not usable unless it is available in the form Key -> [Value], not Key -> Value.) 
-- Operations to be provided
-  - Retrieving entries
+    - (As a container used in RDB index, it is not usable unless it is available in the form Key -> [Value], not Key -> Value) 
+- Provided operations
+  - Retrieving an entry
     - SkipList::Get(key *KV) *KV
-      - If the retrieval succeeds, the return value is the content of Value; if it fails, null is returned
+      - If the retrieval succeeds, the return value is the content of Value. If it fails, null is returned
   - Insert (update) an entry
     - SkipList::Insert(key *KV, val *KV) bool
-      - Returns the truth value of success or failure of the operation
+      - Returns boolean value of success or failure of the operation
   - Removing an entry
     - SkipList::Remove(key *KV) bool
       - The return value is the truth value of success or failure of the operation
