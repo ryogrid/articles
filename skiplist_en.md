@@ -316,7 +316,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - Basically, it just calls the I/F for adding an entry provided by the node indicated by the foundNode in the return value and returns the result as the return value
     - In most cases, the entry is inserted at the appropriate position in the node and the process is completed, but if there is not enough free space in the node, a split is performed
     - split
-      - Creates a new node (page) witch PageaManager::NewPage
+      - Creates a new node (page) with PageaManager::NewPage
         - The level of the new node is the value obtained after the call to NewPage using the function to determine the level (see example code for on-memory version)
         - The new node is assumed to be the next (adjacent) node (at level 1) of the node that was originally to be added (in this case, the parent node)
       - Updating Node Connectivity
