@@ -593,7 +593,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - [skip_list_iterator.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list_iterator.go)
     - [skip_list_test.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list_test/skip_list_test.go)
   - [Code tree of the whole RDB](https://github.com/ryogrid/SamehadaDB/tree/5bf82e666416617ce1d2bd0fbaf16987be73bbc7)
-- The explanations in this document may have been insufficient, but even in that case, if you read the source code listed above based on the contents of this document, we hope that you will be able to create something similar (regardless of the development language).
+- The explanations in this document may have been insufficient, but even in that case, if you read the source code listed above based on the contents of this document, I hope that you will be able to create something similar (regardless of the development language).
 
 # Finally
 - If you find any bugs or misses in the design or in the code examples, please feel free to point them out! 
