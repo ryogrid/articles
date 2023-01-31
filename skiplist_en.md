@@ -338,7 +338,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - In most cases, the entry corresponding to the specified Key is deleted to complete the process, but if the number of entries in the node becomes zero as a result of the deletion, node deletion is performed
     - Node deletion
         - Node connection relationship update
-          - The node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion node deletion
+          - For deletion, processes the node connected to the target node up to the height of the level of the target. processing changes next node setting to  nodes to which target node connected 
           - What is done is generally the same as when a split occurs in Insert, except that in the case of a split, the node corresponding to the parent node is the node whose page ID is stored in index 0 of FindNode's return value predOfCorners_
         - Call PageManager::UnpinPage with the node to be deleted as an argument (dirty flag=true)
         - Deletion of the page used by the node
