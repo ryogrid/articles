@@ -1,4 +1,5 @@
 # Implementation of on-disk concurrent skip list for DBMS's Index
+- author: [ryo_grid](https://twitter.com/ryo_grid) ([Linkedin profile](https://linkedin.com/in/ryo-kanbayashi-3a78266a))
 - The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
 - I couldn't find any web pages and books that provide same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight
 
