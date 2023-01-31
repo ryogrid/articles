@@ -74,7 +74,7 @@
   - Although it may be possible to do it in both directions, the complexity of the logic (especially for parallel access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
 
 
-## Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
+# Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
 
 ## Background of development
 - In the process of developing RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as author have explained so far, I found that it is very difficult especially to the point where parallel access is supported. So, In order to create a Skip List index, I implemented a Skip List container
@@ -99,15 +99,15 @@
   - Retrieving an entry
     - SkipList::Get(key *KV) *KV
       - If the retrieval succeeds, the return value is the content of Value. If it fails, null is returned
-  - Insert (update) an entry
+  - Inserting (updating) an entry
     - SkipList::Insert(key *KV, val *KV) bool
       - Returns boolean value of success or failure of the operation
   - Removing an entry
     - SkipList::Remove(key *KV) bool
       - The return value is the truth value of success or failure of the operation
-  - Get the iterator and range scan with the iterator
+  - Getting the iterator and doing range scan with the iterator
     - SkipLisr::Iterator(start *KV, end *KV) *SLItr
-      - start is the lower limit of the scan range, end is the upper limit; if both start and end are passed null, that side is interpreted as unspecified
+      - start is the lower limit of the scan range, end is the upper limit. if start and end are passed null, that side is treated as unspecified
       - SLItr type is an iterator that returns one value at a time, sorted in ascending order. The return value is the value obtained by scanning the Skip List in the specified range when the Iterator function is called.
         - However, since the scan is not atomic to other operations, it is not guaranteed to be a snapshot of the moment the Iterator function is called
 
@@ -186,7 +186,7 @@ Let me summarize before continuing.
 
 ## Logic design, etc.
 
-## Algorithm for Skip List based on ## Skip List (=on-memory implementation)
+### Algorithm for on-memory Skip List
 - The logic explained in the winning team's slides at ACM ICPC Maraton Prague 2015 was used as a basis
   - https://cw.fel.cvut.cz/old/_media/courses/a4b36acm/maraton2015skiplist.pdf
   - However, the one described in this slide is an on-memory implementation and each node is associated with one entry
@@ -200,7 +200,7 @@ Let me summarize before continuing.
       - => what information is stored in the process of traversing a node => a list of references to the node to which the node was traversed What is required when a node is added or deleted
  
  
-## Extension to a form where one node holds multiple entries (vs. on-memory implementation, regarding data structure)
+### Extension to a form where one node holds multiple entries (vs. on-memory implementation, regarding data structure)
 - The on-disk version of this document is designed to have multiple entries because one node corresponds to one page
 - Each node (Node type) should provide the following (including those that were necessary in the one-to-one correspondence)
   - (Assuming that the entries are still sorted by Key even within a node)
@@ -220,7 +220,7 @@ For convenience of use, Value is a fixed length of 4 bytes. LSN is currently use
 ![block.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/a1abae5c-a58c-d653-7036-23425f3f3d74.png)
 
 
-## Extension to a form where one node holds multiple entries (vs. on-memory implementation, for logic)
+### Extension to a form where one node holds multiple entries (vs. on-memory implementation, for logic)
 - Code examples in Go language are also used here for explanation as appropriate
 - The code described here is at a stage where concurrent (parallel) access is not considered
 - The description is omitted where the extension method is self-explanatory
@@ -353,7 +353,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - In SLItr type implementations, it should be considered not to return a temporary starting point if there is no entry that matches the key specified as the starting point of the range
 
 
-## A method to make Skip List accessible in parallel and concurrently
+### A method to make Skip List accessible in parallel and concurrently
 - THE ART of MULTIPROCESSOR PROGRAMMING - SECOND EDITION" by Maurice Herlihy, Nir Shavit, Victor Luchangco, Michael Spear
   - Commonly known as the TAoMP book. One of the bible of parallel programming
   
@@ -381,7 +381,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 - Simply put, if this method is applied to an extended Skip List (not supported concurrent access = sequential version) in which each node holds multiple entries, it can support concurrent access
   - (Note that the implementation example cited above has only one entry per node)
 
-## Apply the parallel access method described in the TAoMP book to the multiple-entry per node version
+### Apply the parallel access method described in the TAoMP book to the multiple-entry per node version
 - This section focuses on the processing required to support concurrent access for the sequential version and points to be noted when supporting concurrent access
 - Fundamentals of exclusive control Design
     - Methods of exclusive control
@@ -594,7 +594,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - [Code tree of the whole RDB](https://github.com/ryogrid/SamehadaDB/tree/5bf82e666416617ce1d2bd0fbaf16987be73bbc7)
 - The explanations in this document may have been insufficient, but even in that case, if you read the source code listed above based on the contents of this document, we hope that you will be able to create something similar (regardless of the development language).
 
-## Finally
+# Finally
 - If you find any bugs or misses in the design or in the code examples, please feel free to point them out! 
 - I can't deny that I rushed through the important parts, so if you have any questions, please ask in the GitHub issue and I'll try my best to respond to them
 
