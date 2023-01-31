@@ -78,7 +78,7 @@
 # Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
 
 ## Background of development
-- In the process of developing RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as author have explained so far, I found that it is very difficult especially to the point where parallel access is supported. So, In order to create a Skip List index, I implemented a Skip List container
+- In the process of developing RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as author have explained so far, I found that it is very difficult especially to the point where parallel access supporting. So, In order to create a Skip List index, I implemented a Skip List container
   - For this reason, the implementation exists in the code base of SamehadaDB, of which author is the main developer
   - [Reference] LevelDB (on-disk KVS), which is also used in Google Chrome and other applications, uses Skip List in its index (on-memory) to improve access efficiency to entry data in memory (not on disk)
 - Therefore, some of the explanations and design in this document may be influenced by the purpose described above
@@ -91,7 +91,7 @@
     - This document is intended to share knowledge about design of on-memory concurrent Skip List, which does not necessarily have to be consistent with the author's implementation
 - Assumptions
   - Data is handled as a mapping of Key: number, string, etc -> Value: number, string, etc, and this pair is called an entry
-    - It is assumed (for the sake of explanation) that there exists a type (referred to as KV type in this document) that can represent multiple data formats and provides comparison functions (optional) and {"",de} serialization with byte array for each of them, and that Key and Value are treated uniformly as KV type. Key and Value are treated in a unified manner in KV type
+    - It is assumed (for the sake of explanation) that there exists a type (referred to as KV type in this document) that can represent multiple data formats and provides comparison functions (optional) and {"",de} serialization with byte array for each of them, and that Key and Value are treated uniformly as KV type
     - Any data format can be supported as possible as it is expressible in KV type, but the data format to be used as Key must be implemented with large/small comparison
   - Key data format is fixed to the type specified at the time of Skip List instantiation
   - Keys are processed as unique. Multiple entries with keys that are recognized as same value by the comparison function cannot coexist. For example, Inserting an entry with the same key overwrites the Value (Insert = UPSERT).
@@ -114,20 +114,20 @@
 
 ## Internal design
 - On-disk support
-  - Nodes are associated with blocks (fixed length) in a file for on-disk persistence called pages
+  - Nodes are associated with blocks (fixed length) in a file for on-disk persistence and these blocks are called pages
     - For example, locking/unlocking a node for exclusivity control is basically the same as doing so for a page
     - Each page has a unique page ID
-  - Data for a page is obtained via a component called the page manager, which notifies the page manager when it has finished accessing the page and when it is no longer needed
+  - Data for a page is obtained via a component called the page manager. Thread notifies the page manager when the thread finished accessing the page and when obtained page is no longer needed
     - The page manager has an internal buffer in memory (cache area for pages), and individual pages are loaded onto the buffer as needed, but are written to disk if necessary to allocate space for other pages, and so on
   - Page (Note: this is different from "page" in OS memory management mechanism)
     - Page type
       - Holds the page ID of the corresponding page in a member variable
-        - When an instance corresponding to a page A (page ID=>A) exists in memory, it is controlled so that only one instance corresponding to page A exists, and when page A is manipulated in a program, it is accessed by sharing a reference to the same instance.
-      - Read-write locking is possible (with the corresponding Mutex as a member)
+        - When an instance corresponding to a page A (page ID=>A) exists in memory, it is controlled so that only one instance corresponding to page A exists, and when page A is manipulated in a program, it is accessed by sharing a reference to the same instance
+      - Read-write locking is possible (with the corresponding Mutex which is a member variable)
       - Has a counter called "pin count" as a member, and if it is 0, it means that there is no thread using the page, and the page manager recognizes it as a page that can be cached out to disk
       - Has a reference to the area of page data loaded in memory
 - Page Manager (hereafter referred to as PM)
-  - The PM shall provide the following I/F (* Behavior is defined only as described below)
+  - The PM shall provide the following I/F (assumed behaviors are only described below)
     - PageManager::NewPage(newPage *Page) int32
       - Generates a new page and returns the allocated page ID and a reference to the Page type entity.
       - The pin count of the page is assumed to be 1
