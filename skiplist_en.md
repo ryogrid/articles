@@ -129,44 +129,44 @@
 - Page Manager (hereafter referred to as PM)
   - The PM shall provide the following I/F (assumed behaviors are only described below)
     - PageManager::NewPage(newPage *Page) int32
-      - Generates a new page and returns the allocated page ID and a reference to the Page type entity.
-      - The pin count of the page is assumed to be 1
+      - Generates a new page and returns ID of the allocated page and a reference to the Page type entity.
+      - The pin count of the page is 1
     - PageManager::DeallocatePage(pageId int32)
-      - The page corresponding to the given ID is added to the list of free pages that can be returned by NewPage
-        - The corresponding area of the file for persistence is also made available for reuse
-      - Once a page ID is passed to DeallocatePage, it is not reused
+      - The page corresponding to the given ID is added to the list of reusable pages that can be returned by NewPage
+        - The corresponding area of the DB file is made available for reuse
+      - Once a page ID is passed to DeallocatePage, the ID is not reused
         - FetchPage with a page ID that has already been deallocated returns null 
     - PageManager::FetchPage(int32 pageId) *Page
-      - When a page ID is passed, a Page type object is returned with data to the area if it is cached in memory, or if not, to the area after reading data from disk in the buffer
+      - When a page ID is passed, a Page type instance is returned with reference to the page data if it is cached in memory, or if not, to the page data after reading data from disk in the buffer
       - If a page ID that does not exist in memory or on disk is passed, null is returned
       - Page is returned with a pin count of +1
     - PageManager::UnpinPage(pageId int32, isDirty bool)
-      - Notifies the PM that access to the page corresponding to the passed page ID is complete
-      - The isDirty flag is set to true if the page content has been rewritten
-        - Tip information for efficient cache processing
+      - Notifies the PM that access to the page corresponding to the passed page ID is finished
+      - The isDirty flag is set to true if the page content has been updated
+        - hint information for efficient caching
       - Set the pin count of the corresponding page to -1. PM recognizes pages with a pin count of 0 as pages that can be cached out
-        - When multiple threads are accessing a page, the pin count does not necessarily become 0 just because one thread has UnpinPageed the page
+        - When multiple threads are accessing a page, the pin count does not always become 0 just because one thread calls UnpinPage the page
   - Reference
     - If you are interested in the internal design of PageManager, please refer to the slides of CMU's open courseware lecture below
       - Note: In this lecture, Page Manager is called "Buffer Pool"
-      - For more information about the lecture, please see the top of the repository
+      - For more information about the lecture, please see the top of the repository which PDFs are stored at
       - [03-storage1.pdf](https://github.com/ryogrid/CMU_lecture_DATABASE_SYSTEMS_materials/blob/main/slides/03-storage1.pdf)
       - [04-storage2.pdf](https://github.com/ryogrid/CMU_lecture_DATABASE_SYSTEMS_materials/blob/main/slides/04-storage2.pdf)
       - [05-bufferpool.pdf](https://github.com/ryogrid/CMU_lecture_DATABASE_SYSTEMS_materials/blob/main/slides/05-bufferpool.pdf)
 - Node
   - Node type
-    - Has a reference to a Page type entity, through which a Read-Write lock is possible
+    - Has a reference to a Page type instance, through which a Read-Write lock is possible
     - It also has access to the page data area and provides getter/setter equivalent I/F groups for metadata and entry data stored in/on the page
-    - Since there is only one member mentioned above and other data exists in the page data area, they are accessed via {de,""} serialization performed by the I/Fs mentioned above
+    - Since there is only one member mentioned above and other data exists in the page data area, they are accessed via {"",de} serialization performed by the I/Fs mentioned above
     - In most cases, multiple entries are stored
 
 ## Other important points
 - Constraints
   - The size limit of an entry is the page size minus the size of the page header area and the metadata area required when serializing the KV type
-    - However, it is necessary to consider the case where two new nodes must be created when splitting, as described below, and this would complicate the process. In reality, it would be safe to set the maximum size at a little less than half of the page size.
+    - However, it is necessary to consider the case where two new nodes must be created when splitting, as described below, and this would complicate the process. In reality, it would be safe to set the maximum size at a little less than half of the page size
 - Additional points that should be considered for a datastore
-  - Do you support transactions?
-    - Does it support transactions?
+  - Does it support transactions?
+    - => Not supported
     - (Because it was originally developed as a container for RDB indexing, it is possible to use the transaction mechanism of RDB itself when it is embedded in RDB)
   - Does it support Logging/Recovery?
     - => Not supported
@@ -177,13 +177,13 @@
 Let me summarize before continuing.
 
 
-- Because one node is a structure that contains multiple entries
-  - On-memory implementations are usually implemented in a way that one node corresponds to one entry (see below)
-  - In contrast, the structure described above requires a structure in which one node contains multiple entries.
-    - Sequential disk I/O considering OS page size (more efficient than random access), and data cache to hide slow disk I/O compared to main memory as much as possible, data needs to be handled in page units
+- Because one node contains multiple entries
+  - On-memory implementations are usually implemented in a way that one node corresponds to one entry (please see later section)
+  - In contrast, the structure described above requires storeing multiple entries.
+    - Sequential disk I/O considering OS page size (more efficient than random access), and data caching to hide slow disk I/O compared to main memory as much as possible, data needs to be handled in page units
     - The page size needs to be larger than 4KB based on the default settings of recent OSes, and as a result, it is reasonable to design a page that contains multiple entries
     - However, a structure that includes multiple entries may simply require logic expansion, and in many cases, processing that would be simple if handled on a one-to-one basis is no longer so
-- There was information on a method to enable parallel access to on-memory Skip Lists (see below), but as mentioned above, the data structure was different, so additional considerations were required when applying the method
+- There was information on a method to enable concurrent access to on-memory Skip Lists (please see later section), but as mentioned above, the data structure was different, so additional considerations were required when applying the method
 
 ## Logic design, etc.
 
