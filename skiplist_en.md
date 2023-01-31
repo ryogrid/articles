@@ -191,23 +191,23 @@ Let me summarize before continuing.
 - The logic explained in the winning team's slides at ACM ICPC Maraton Prague 2015 was used as a basis
   - https://cw.fel.cvut.cz/old/_media/courses/a4b36acm/maraton2015skiplist.pdf
   - However, the one described in this slide is an on-memory implementation and each node is associated with one entry
-  - It is not parallel or parallel-accessible
-- The following assumes an understanding of the implementation presented in the "ACM ICPC Maraton Prague 2015 Winning Team's Slides".
+  - Additionaly, the implementation is not accessible concurrently
+- The following explanation assumes an understanding of the implementation presented in the "ACM ICPC Maraton Prague 2015 Winning Team's Slides".
   - The following points are of particular importance for understanding what follows
     - How the code traverses the nodes from the first node to the node to be explored
     - What information is stored in the process of traversing a node?
-      - => List of references to the node you switched to
+      - => List of references to the node switched to
     - What is needed to add or delete a node?
-      - => what information is stored in the process of traversing a node => a list of references to the node to which the node was traversed What is required when a node is added or deleted
+      - => processing connection info of nodes described above
  
  
 ### Extension to a form where one node holds multiple entries (vs. on-memory implementation, regarding data structure)
 - The on-disk version of this document is designed to have multiple entries because one node corresponds to one page
-- Each node (Node type) should provide the following (including those that were necessary in the one-to-one correspondence)
+- Each node (Node type) should provide the following (including those that are necessary in the one-to-one correspondence)
   - (Assuming that the entries are still sorted by Key even within a node)
   - Retrieving, deleting, and adding entries by Key (and Value, if necessary)
     - The fact that entries are sorted by Key enables bisection search, and the overall processing time can be reduced to O (log N), even if it includes processing after node search.
-    - The retrieval process returns the entry with the closest value among the entries with keys smaller than the specified Key, even if the entry does not exist
+    - The retrieval operation returns a entry with the closest value among the entries with keys smaller than the specified Key, even if the entry which has specified Key does not exist
       - Necessary to realize Iterator
   - Retrieving the entry with the smallest Key in a node
     - Note that even if an entry is returned, only the Key is used
@@ -217,17 +217,17 @@ Let me summarize before continuing.
     - The acquisition and setting must be possible from level 1 to the level of the node
   
 **[Reference] Data layout of a node in the implementation that exists in SamehadaDB**  
-For convenience of use, Value is a fixed length of 4 bytes. LSN is currently used only as an update counter as described below 
+For convenience of use, Value is a fixed length of 4 bytes. LSN is currently used only as an update counter as described in later section 
 ![block.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/a1abae5c-a58c-d653-7036-23425f3f3d74.png)
 
 
 ### Extension to a form where one node holds multiple entries (vs. on-memory implementation, for logic)
-- Code examples in Go language are also used here for explanation as appropriate
+- Code examples in Go language are also used here
 - The code described here is at a stage where concurrent (parallel) access is not considered
 - The description is omitted where the extension method is self-explanatory
 - Node search process
   - The code includes a comment [number], each of which is described below
-  - At the end of the call to FindNode, the pin count of the return value foundNode is +1
+  - At the end of the call of FindNode, the pin count of the return value "foundNode" is implemented (+1)
   
 ```go:findnode_serial.go
 // Utility function to cast a pointer of type Page to a pointer of type Node
@@ -288,13 +288,13 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 }
 ```
 
-- [1] Loop for tracing from the level of the upper limit (MAX_FOWARD_LIST_LEN) in the overall Skip List level toward level 1
+- [1] Loop for traversing from the level of the upper limit (MAX_FOWARD_LIST_LEN) in the overall Skip List level toward level 1
   - In the author's implementation, the upper limit was set to 20
-    - The probability P in the function that determines the level of a node is set to 0.5
-  - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when parallel access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference, so sequential execution would result in wasteful processing. Therefore, the search is started from the upper level, even though sequential execution would cause wasteful processing
-- [2] A loop that linearly searches for nodes to be transferred at level ii
-  - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, the node one before that node is selected as the node to be switched, and the loop ends
-    - (If the node is reached, it is too far, so the node before the node is used to transfer to the next level
+    - The probability **P** in the function that determines the level of a node is set to 0.5
+  - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though sequential execution would cause wasteful processing
+- [2] A loop that linearly searches for nodes to be used for transfer at level ii
+  - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, the node one before that node is selected for transafer, and the loop ends
+    - (If the node is reached, it is too far, so the node before the node is used to transfer to the next level)
 - [3] Consideration when node deletion is found to occur
   - Processing to be performed after discovering a transfer node
   - The route to be taken if the operation to be performed is "remove," the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the value of the entry matches the key to be searched for
