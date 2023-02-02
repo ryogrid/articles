@@ -39,7 +39,7 @@
   - Take on-memory XXX is basically operated while data is still in memory
   - On-disk XXX changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage, or conversely being loaded into memory
   - It may be said that a program which is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory and drowing on it
-- **Concurrent (≒parallel) Accessible**
+- **Concurrent Accessible**
   - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data
   - <=> If the entire data structure is controlled by a single lock, only one thread can access it at the same time
 - Skip List
@@ -63,22 +63,22 @@
 
 ## Bad points of (naive) Skip List
 - Because of its probabilistic desing and lack of rebalancing, there are not few cases where access cannot be performed in log N steps, compared to the B-tree variants
-- Efficient parallel access is harder to achieve than B-tree variants
+- Efficient concurrent access is harder to achieve than B-tree variants
   - (You had better to read the section about concurrent implementation before read here...) 
-  - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock of a node first, it will cause a contentions with the other threads and the throughput of parallel access decreases due to these
+  - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock of a node first, it will cause a contentions with the other threads and the throughput of concurrent access decreases due to these
   - However, in the Skip List, if a thread acquires a W-lock of a node, other threads that want to pass through the locked node is blocked at the node on all levels up to the level of the node
     - Fundamental difference may be that branch and leaf (node) locks are not separated in Skip List unlike B-tree variants
     - (I think it is necessary to take into account that there are areas that become inaccessible while rebalance is processed in the case of B-tree variants)
 - Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping
   - (e.g., a node to be fetched to determine if current position has "gone too far" as described in later section)
 - Range scan (≒iterating by specifying a range) of entries can only be performed in the direction decided at the time of data structure design
-  - Although it may be possible to do it in both directions, the complexity of the logic (especially for parallel access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
+  - Although it may be possible to do it in both directions, the complexity of the logic (especially for concurrent access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
 
 
 # Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
 
 ## Background of development
-- In the process of developing RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as author have explained so far, I found that it is very difficult especially to the point where parallel access supporting. So, In order to create a Skip List index, I implemented a Skip List container
+- In the process of developing RDB, author thought of implementing B+tree indexes which are widely used in major RDBs, but as author have explained so far, I found that it is very difficult especially to the point where concurrent access supporting. So, In order to create a Skip List index, I implemented a Skip List container
   - For this reason, the implementation exists in the code base of SamehadaDB, of which author is the main developer
   - [Reference] LevelDB (on-disk KVS), which is also used in Google Chrome and other applications, uses Skip List in its index (on-memory) to improve access efficiency to entry data in memory (not on disk)
 - Therefore, some of the explanations and design in this document may be influenced by the purpose described above
@@ -223,11 +223,11 @@ For convenience of use, Value is a fixed length of 4 bytes. LSN is currently use
 
 ### Extension to a form where one node holds multiple entries (vs. on-memory implementation, for logic)
 - Code example in Go language is also used here
-- The code described here is at a stage where concurrent (parallel) access is not considered
+- The code described here is at a stage where concurrent access is not considered
 - The description is omitted where the extension method is self-explanatory
 - Node search process
   - The code includes a comment [number], each of which is described below
-  - At the end of the call of FindNode, the pin count of the return value "foundNode" is incremented (+1)
+  - At the end of the call of FindNode, the pin count of the return value **foundNode** is incremented (+1)
   
 ```go
 // Utility function to cast a pointer of type Page to a pointer of type Node
@@ -292,26 +292,26 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - In the author's implementation, the upper limit was set to 20
     - The probability **P** in the function that determines the level of a node is set to 0.5
   - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though wasteful processing runs in sequential execution
-- [2] A loop that linearly searches for nodes to be used for transfer at level ii
+- [2] A loop that linearly searches for nodes to be used for transfer at level **ii**
   - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, a node one before the node is selected for transafer, and the loop ends
     - (If the node is reached, it is too far, so the node before the node is used to transfer to the next level)
 - [3] Consideration when node deletion is found to occur
   - Processing to be performed after discovering a transfer node
-  - The route to be taken if the operation to be performed is "remove," the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the value of the entry matches the key to be searched for
+  - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the key of the entry matches the key to be searched for
     - This route is taken into account in cases where node deletion is to be performed as a result, and the node to be searched for has been reached at a level above 1
-    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, the node to be deleted will be transferred to level 1, which is not stored in the predOfCornes list, and there will be nodes connected to the node to be deleted, which is not convenient. This is not convenient
-    - Therefore, the route in [3] changes the node to be transferred at the current level to the previous node, so that the above problem does not occur.
+    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, node transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
+    - Therefore, the route in [3] changes the node to be transferred at the current level to the previous node, so that the above problem does not occur
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
-  - UnpinPage the node curr that has gone too far, since it will no longer be accessed
-  - Store the page ID of the transfer node in Corners and the page ID of the node before the transfer node in predOfCorners
+  - UnpinPage the node **curr** that has gone too far, since it will no longer be accessed
+  - Store the page ID of the transfer node in **corners** and the page ID of the node before the transfer node in **predOfCorners**
 
   
 - Finding the node and subsequent processing
   - Get
-    - Basically, it only calls the I/F of the entry acquisition provided by the node indicated by the return value foundNode and returns the result as the return value
+    - Basically, it only calls the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** and returns the result as the return value
       - Search within a node by binary search (similar for other operations)
       - There may be cases where none exists
-    - Finally, PageManager::UnpinPage is called with the node indicated by foundNode as the argument (dirty flag=false)
+    - Finally, PageManager::UnpinPage is called with the node indicated by **foundNode** as the argument (dirty flag=false)
   - Insert
     - Basically, it just calls the I/F for adding an entry provided by the node indicated by the foundNode in the return value and returns the result as the return value
     - In most cases, the entry is inserted at the appropriate position in the node and the process is completed, but if there is not enough free space in the node, a split is performed
@@ -322,7 +322,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - Updating Node Connectivity
         - Update the connection relationship up to the level of the new node          
         - At level 1, the node to which the parent node is connected is the new node, and the node to which the new node is connected is the node to which the parent node was connected
-        - For other levels, it is sufficient to do the same by referring to the transfer nodes that have been passed through the search process, which are stored in the return value of FindNode, corners_
+        - For other levels, it is sufficient to do the same by referring to the transfer nodes that have been passed through the search process, which are stored in the return value of FindNode, **corners_**
           - Since it is the page ID that is stored, PageManager::FetchPage is used to retrieve the node, and PageManager::UnpinPage is called (dirty flag=true) when the access, including updating the connection destination, is complete   
       - Moving entries
         - Basically, move the back half of the entries existing in the parent node to the new node
@@ -339,11 +339,11 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - Node deletion
         - Node connection relationship update
           - For deletion, processes the node connected to the target node up to the height of the level of the target. processing changes next node setting to  nodes to which target node connected 
-          - What is done is generally the same as when a split occurs in Insert, except that in the case of a split, the node corresponding to the parent node is the node whose page ID is stored in index 0 of FindNode's return value predOfCorners_
+          - What is done is generally the same as when a split occurs in Insert, except that in the case of a split, the node corresponding to the parent node is the node whose page ID is stored in index 0 of FindNode's return value **predOfCorners_**
         - Call PageManager::UnpinPage with the node to be deleted as an argument (dirty flag=true)
         - Deletion of the page used by the node
           - Call PageManager::DeallocatePage
-    - If node deletion did not occur, PageManager::UnpinPage is called with the node indicated by foundNode that has finished accessing (dirty flag=true)
+    - If node deletion did not occur, PageManager::UnpinPage is called with the node indicated by **foundNode** that has finished accessing (dirty flag=true)
   - Iterator
     - Cases in which findNode is called are at least the cases in which a starting point is specified in the range specification.
     - Generate SLItr type using the resulting entries
@@ -354,9 +354,9 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - In SLItr type implementations, it should be considered not to return a temporary starting point if there is no entry that matches the key specified as the starting point of the range
 
 
-### A method to make Skip List accessible in parallel and concurrently
+### A method to make Skip List accessible in concurrent and concurrently
 - THE ART of MULTIPROCESSOR PROGRAMMING - SECOND EDITION" by Maurice Herlihy, Nir Shavit, Victor Luchangco, Michael Spear
-  - Commonly known as the TAoMP book. One of the bible of parallel programming
+  - Commonly known as the TAoMP book. One of the bible of multi threads programming
   
 ![atomp.jpg](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/b6113459-b4ed-596a-63d9-1c0098212f0c.jpeg)
   
@@ -382,7 +382,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 - Simply put, if this method is applied to an extended Skip List (not supported concurrent access = sequential version) in which each node holds multiple entries, it can support concurrent access
   - (Note that the implementation example cited above has only one entry per node)
 
-### Apply the parallel access method described in the TAoMP book to the multiple-entry per node version
+### Apply the concurrent access method described in the TAoMP book to the multiple-entry per node version
 - This section focuses on the processing required to support concurrent access for the sequential version and points to be noted when supporting concurrent access
 - Fundamentals of exclusive control Design
     - Methods of exclusive control
@@ -502,20 +502,20 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 ```  
 
 - [1] Structure for storing transit node information passed in the search process
-  - In the sequential version, only the page ID is stored in int32, but in the parallel access version, the update counter must also be stored
+  - In the sequential version, only the page ID is stored in int32, but in the concurrent access version, the update counter must also be stored
 - [2] A loop that linearly searches for nodes to be transferred at level ii.
   - What is done is basically the same as the sequential version
   - However, the difference is that it proceeds while acquiring and releasing locks to support concurrent access
     - If there is no node with a lock, there is a possibility that the search process will not be executed correctly if a node is updated by another thread, so the search always proceeds with one node holding a lock
-    - However, if the search proceeds while acquiring a new lock without releasing the held lock, other threads' access to the node holding the lock will be interfered with (≒lock contention), and the throughput of multiple threads in parallel access will be reduced, so only the minimum necessary lock is held. Therefore, only the minimum necessary amount of locks are retained and proceed
+    - However, if the search proceeds while acquiring a new lock without releasing the held lock, other threads' access to the node holding the lock will be interfered with (≒lock contention), and the throughput of multiple threads in concurrent access will be reduced, so only the minimum necessary lock is held. Therefore, only the minimum necessary amount of locks are retained and proceed
       - In order to keep locks to the minimum necessary, a new node's lock is acquired while the original lock is retained, and the original lock is released
       - The exception is when a node with a newly acquired lock is found to be unnecessary for the continuation of the search process (the case referred to as "too much" in the sequential version), in which case the newly acquired lock is released and the search process continues
     - In the case of an update operation, the node proceeds while acquiring the W lock, and in the case of a reference operation, the node proceeds while acquiring the R lock
-      - Since it is basically impossible to replace the R lock with a W lock, update operations that require a W lock for the final update target will proceed by acquiring the W lock, which is an exclusive lock
-      - (With some ingenuity, it is possible to proceed with the R lock at least up to level 1, but this is complicated by the fact that the search process must be retried from the beginning in the event of a failure to switch locks)
+      - Since it is basically impossible to replace the R-lock with a W-lock, update operations that require a W-lock for the final update target will proceed by acquiring the W-lock, which is an exclusive lock
+      - (With some ingenuity, it is possible to proceed with the R-lock at least up to level 1, but this is complicated by the fact that the search process must be retried from the beginning in the event of a failure to switch locks)
     - (Since this is required in [3] and [4], when moving forward, store the page ID of the pred in predOfpredId and the value of the update counter of the pred in predOfpredCounter)
       - The update counter is a counter managed by the page to determine whether the node has been updated or not.
-      - The update counter is incremented when an update operation is performed on a node.
+      - The update counter is incremented when an update operation is performed on a node
 - [3] Consideration when node deletion is found to occur
   - This is basically the same as the sequential version
   - However, since simply moving the current location backward would violate the order in which locks are acquired, additional considerations are needed to avoid this
@@ -523,49 +523,49 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - (Newly acquired locks are nodes that have already been acquired and released in the past)
     - If the node has been updated, the search may not continue correctly, so it checks if the update counter stored at the last pass and the update counter after acquiring the lock again are the same
     - If the values of the two update counters do not match, it means that an update has taken place, so the search process is given up, all locks held are released, and the search process is retried from the beginning
-      - The retry should be designed to be performed by the FindNode caller. If the return value isSuccess is false, it indicates that a retry is necessary
+      - The retry should be designed to be performed by the FindNode caller. If the return value **isSuccess** is false, it indicates that a retry is necessary
     - If a match is found, the search process continues as is
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - What is done is basically the same as in the sequential version
-  - The page ID of the transfer node is stored in corners, and the page ID of the node before the transfer node is stored in predOfCorners, as in the sequential version, but since it is necessary for splits and node deletions, the SkipListCornerInfo type is used and the update counter value is also stored
+  - The page ID of the transfer node is stored in **corners**, and the page ID of the node before the transfer node is stored in **predOfCorners**, as in the sequential version, but since it is necessary for splits and node deletions, the SkipListCornerInfo type is used and the update counter value is also stored
   
 - For the process after finding a node
   - Get
-    - Basically, the I/F of the entry acquisition provided by the node indicated by the return value foundNode is called and the result is returned
+    - Basically, the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** is called and the result is returned
       - Search within the node by binary search (the same applies to other operations)
-      - (The same applies to other operations.) There may be cases where no entry exists
-    - PageManager::UnpinPage is called with the node indicated by foundNode as the argument after the last access, and in addition, the R lock is released
+      - (The same applies to other operations) There may be cases where no entry exists which has key specified key matches with
+    - PageManager::UnpinPage is called with the node indicated by **foundNode** as the argument after the last access, and in addition, the R-lock is released
   - Insert
-    - Basically, it only calls the I/F for adding an entry provided by the node indicated by the return value foundNode and returns the result as the return value
+    - Basically, it only calls the I/F for adding an entry provided by the node indicated by the return value **foundNode** and returns the result as the return value
       - However, unlike the sequential version, there are cases where the operation fails, so an additional return value is required to tell the caller that a retry is necessary
     - split
       - Basically the same as in the sequential version
       - However, when updating connection relations, the lock acquisition order convention is violated, so as in the case of node search [3], after releasing all locks held, locks on each node are acquired one by one, checked for updates, and if there are any updates, a retry is performed from node search, and if there are no updates, all locks are released. If there is no update, it retries from node search, and if there is, it reconnects to each node with all locks retained, and then releases all locks
         - However, if the check result is OK, the lock on the parent node must not be released until the Insert process is completed.
-        - Similarly, calling UnpinPage is also not allowed, since the total pin count is +2 at the end of the Insert process.
+        - Similarly, calling UnpinPage is also not allowed, since the total pin count is +2 at the end of the Insert process
       - Notes
-        - Remember that the parent node must also be checked for updates.
+        - Remember that the parent node must also be checked for updates
         - A new node should be locked immediately after creation, and should not be released until the Insert process is finished. Do not forget to UnpinPage when releasing the lock
-        - Although it is necessary to release all the locks held once, the pin of the parent node must be left up, otherwise cache out and in will occur, and the address of the reference obtained by fetching will change, which will cause trouble.
+        - Although it is necessary to release all the locks held once, the pin of the parent node must be left up, otherwise cache out and in will occur, and the address of the reference obtained by fetching will change, which will cause trouble
           - And if you forget to drop the pin you left up in UnpinPage, it will also be a hassle
         - Don't forget to increment the update counter and UnpinPage (dirty flag=true) the node that has been reconnected.
-          - Don't forget about parent nodes and new nodes
-        - corners_ may have the same node at different levels
+          - Don't forget about parent nodes and new nodes also
+        - **corners_** may contains same node at different levels
   - Remove
     - Basically, what we do is the same as in the sequential version
     - If you need to delete a node and update the connection, you can do so in the same way as described in the split section above.
     - Notes
-      - Note: As in the sequential version, the page IDs that need to be reconnected at level 1 are stored in the index 0 of predOfCorners_, but do not forget to check for updates of these as well
+      - Note: As in the sequential version, the page IDs that need to be reconnected at level 1 are stored in the index 0 of **predOfCorners_**, but do not forget to check for updates of these as well
       - The node to be deleted also gives up its lock, so an update check is necessary
-        - The node ID is stored in index 0 of corners_, so we can use it
-      - The same node may be set at different levels in corners_
+        - The node ID is stored in index 0 of **corners_**, so we can use it
+      - The same node may be set at different levels in **corners_**
   - Iterator
     - Basically the same as in the sequential version
     - Generate SLItr type using the entries obtained
       - When obtaining an entry, do not release the R-lock of the node where the entry was stored
         - If you release the R-lock, other threads may remove the entry, or the addition of the entry may cause a split, which may change the location of the entry
       - Although this is a difficult design issue, we think it is safe to retrieve entries from the entries obtained by FindNode in the Skip List when generating the SLItr type, up to the specified range, and retain the results
-        - With this design, it is guaranteed that only entries that exist within the specified range will be returned in ascending order.
+        - With this design, it is guaranteed that only entries that exist within the specified range will be returned in ascending order
           - However, as mentioned above, the retrieval of entries here is not atomic to other operations, so it is not a snapshot of the moment when SkipList::Iterator is invoked
         - The process is to traverse the consecutive nodes at level 1, repeatedly acquiring and releasing the R-lock.
         - If no special effort is made, the entries collected in memory will be retained, which may result in unacceptable memory consumption, but this concern can be avoided by using the PM or page mechanism or other methods, such as writing to disk and reading back later. It is possible to avoid this concern by writing the data to disk and reading it later
