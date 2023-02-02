@@ -192,7 +192,7 @@ Let me summarize before continuing.
   - https://cw.fel.cvut.cz/old/_media/courses/a4b36acm/maraton2015skiplist.pdf
   - However, the one described in this slide is an on-memory implementation and each node is associated with one entry
   - Additionaly, the implementation is not accessible concurrently
-- The following explanation assumes an understanding of the implementation presented in the "ACM ICPC Maraton Prague 2015 Winning Team's Slides".
+- The following explanation assumes an understanding of the implementation presented in the "ACM ICPC Maraton Prague 2015 Winning Team's Slides"
   - The following points are of particular importance for understanding what follows
     - How the code traverses the nodes from the first node to the node to be explored
     - What information is stored in the process of traversing a node?
@@ -216,18 +216,18 @@ Let me summarize before continuing.
   - Obtains and sets the page ID of the node connected as the next node at the specified level
     - The acquisition and setting must be possible from level 1 to the level of the node
   
-**[Reference] Data layout of a node in the implementation that exists in SamehadaDB**  
+**[Reference] Data layout of a node in SamehadaDB**  
 For convenience of use, Value is a fixed length of 4 bytes. LSN is currently used only as an update counter as described in later section 
 ![block.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/a1abae5c-a58c-d653-7036-23425f3f3d74.png)
 
 
 ### Extension to a form where one node holds multiple entries (vs. on-memory implementation, for logic)
-- Code examples in Go language are also used here
+- Code example in Go language is also used here
 - The code described here is at a stage where concurrent (parallel) access is not considered
 - The description is omitted where the extension method is self-explanatory
 - Node search process
   - The code includes a comment [number], each of which is described below
-  - At the end of the call of FindNode, the pin count of the return value "foundNode" is implemented (+1)
+  - At the end of the call of FindNode, the pin count of the return value "foundNode" is incremented (+1)
   
 ```go:findnode_serial.go
 // Utility function to cast a pointer of type Page to a pointer of type Node
@@ -241,7 +241,7 @@ func FetchAndCastToNode(pm *PageManager, pageId int32) *Node {
 // opType: a constant indicating what the FindNode function was called for. Pass a constant corresponding to one of GET, INSERT, or REMOVE
 // Return value
 // isSuccess: Whether the search was successful (only true is returned in this code example)
-// foundNode: Pointer to the node found as a result of the search. It only means that the entry corresponding to the foundNode node may exist, but its existence is not guaranteed
+// foundNode: Pointer to the node found as a result of the search. It only means that the foundNode node may contain the entry corresponding to key argument. existence is not guaranteed
 // predOfCorners_: page ID of the previous node connected to the node when it was "switched" at each level. The index is (level - 1).
 // corners_: Page ID of the node that was "switched" at each level. The value of level 1 corresponds to foundNode. The index is (level - 1)
 func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, foundNode *Node, predOfCorners_ []int32, corners_ []int32) {
@@ -396,7 +396,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - After starting access to the Skip List, always hold the lock of at least one node, except when split and some processes for node deletion are being performed, and release the lock after the access is completed. When retrying (see below), all locks are released in the same way
 - Node search process
   - The code contains comments [number], each of which is explained below.
-  - At the end of FindNode, if the return value isSuccess is true, the thread has acquired the R or W lock of the returned foundNode Also, the pin count of the node is increased by +1
+  - At the end of FindNode, if the return value isSuccess is true, the thread has acquired the R or W-lock of the returned foundNode Also, the pin count of the node is increased by +1
     - W-lock for update operations, R-lock for reference operations
     - In the code, the term "latch" is used instead of "lock" as is customary in the world of database systems
 
@@ -435,7 +435,7 @@ func latchOpWithOpType(node *Node, getOrUnlatch LatchOpCase, opType SkipListOpTy
 // opType: a constant indicating what the FindNode method was called for. Pass a constant corresponding to one of GET, INSERT, or REMOVE
 // Return value
 // isSuccess: Whether the search was successful or not (false indicates that a retry is necessary)
-// foundNode: Pointer to the node found as a result of the search. It only means that the entry corresponding to the foundNode node may exist, but its existence is not guaranteed
+// foundNode: Pointer to the node found as a result of the search. It only means that the foundNode node may contain the entry corresponding to key argument. existence is not guaranteed
 // predOfCorners_: page ID of the previous node connected to the node when it was "switched" at each level. The index is (level - 1)
 // corners_: Page ID of the node that was "switched" at each level. The value of level 1 corresponds to foundNode. The index is (level - 1)
 func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, foundNode *Node, predOfCorners_ []SkipListCornerInfo, corners_ [] SkipListCornerInfo) {
