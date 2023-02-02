@@ -1,3 +1,7 @@
 theme: jekyll-theme-cayman
 title: Technical Articles
 description: 　
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: thankful_eyes

@@ -67,7 +67,7 @@
   - (You had better to read the section about concurrent implementation before read here...) 
   - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock of a node first, it will cause a contentions with the other threads and the throughput of parallel access decreases due to these
   - However, in the Skip List, if a thread acquires a W-lock of a node, other threads that want to pass through the locked node is blocked at the node on all levels up to the level of the node
-    - Fundamental difference may be that node and leaf locks are not separated in Skip List unlike B-tree variants
+    - Fundamental difference may be that branch and leaf (node) locks are not separated in Skip List unlike B-tree variants
     - (I think it is necessary to take into account that there are areas that become inaccessible while rebalance is processed in the case of B-tree variants)
 - Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping
   - (e.g., a node to be fetched to determine if current position has "gone too far" as described in later section)
@@ -229,7 +229,7 @@ For convenience of use, Value is a fixed length of 4 bytes. LSN is currently use
   - The code includes a comment [number], each of which is described below
   - At the end of the call of FindNode, the pin count of the return value "foundNode" is incremented (+1)
   
-```go:findnode_serial.go
+```go
 // Utility function to cast a pointer of type Page to a pointer of type Node
 func FetchAndCastToNode(pm *PageManager, pageId int32) *Node {
 	fetchedPage := pm.FetchPage(pageId)
@@ -400,7 +400,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - W-lock for update operations, R-lock for reference operations
     - In the code, the term "latch" is used instead of "lock" as is customary in the world of database systems
 
-```go:findnode_parallel.go
+```go
 type SkipListCornerInfo struct { // [1]
 	PageId int32
 	UpdateCounter int32
