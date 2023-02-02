@@ -1,6 +1,7 @@
-highlighter: rouge
-syntax_highlighter: thankful_eyes
-theme: jekyll-theme-cayman
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+- jekyll-remote-theme 
 title: Technical Articles
 description: 　
-
+highlighter: rouge
+syntax_highlighter: thankful_eyes
