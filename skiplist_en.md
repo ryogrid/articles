@@ -294,7 +294,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though wasteful processing runs in sequential execution
 - [2] A loop that linearly searches for nodes to be used for transfer at level **ii**
   - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, a node one before the node is selected for transafer, and the loop ends
-    - (If the node is reached, it is too far, so the node before the node is used to transfer to the next level)
+    - If reached a node which is too far, a node before the node is a node should be used to transfer to the next level
 - [3] Consideration when node deletion is found to occur
   - Processing to be performed after discovering a transfer node
   - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the key of the entry matches the key to be searched for
@@ -306,23 +306,23 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - Store the page ID of the transfer node in **corners** and the page ID of the node before the transfer node in **predOfCorners**
 
   
-- Finding the node and subsequent processing
+- Subsequent operations after finding target node
   - Get
-    - Basically, it only calls the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** and returns the result as the return value
+    - Basically, it only calls the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** and returns the result
       - Search within a node by binary search (similar for other operations)
-      - There may be cases where none exists
+      - There may be cases where matching entry does not exist
     - Finally, PageManager::UnpinPage is called with the node indicated by **foundNode** as the argument (dirty flag=false)
   - Insert
-    - Basically, it just calls the I/F for adding an entry provided by the node indicated by the foundNode in the return value and returns the result as the return value
+    - Basically, it just calls the I/F for adding an entry provided by the node indicated by the **foundNode** in the return value and returns the result
     - In most cases, the entry is inserted at the appropriate position in the node and the process is completed, but if there is not enough free space in the node, a split is performed
     - split
       - Creates a new node (page) with PageaManager::NewPage
-        - The level of the new node is the value obtained after the call to NewPage using the function to determine the level (see example code for on-memory version)
-        - The new node is assumed to be the next (adjacent) node (at level 1) of the node that was originally to be added (in this case, the parent node)
-      - Updating Node Connectivity
+        - The level of the new node is the value obtained after the call of NewPage using the function to determine the level (please see code of on-memory version)
+        - The new node is assumed to be the next (adjacent) node (at level 1) of the node that was originally to be added (in this case, author calls it "parent node")
+      - Updating node connectivity
         - Update the connection relationship up to the level of the new node          
         - At level 1, the node to which the parent node is connected is the new node, and the node to which the new node is connected is the node to which the parent node was connected
-        - For other levels, it is sufficient to do the same by referring to the transfer nodes that have been passed through the search process, which are stored in the return value of FindNode, **corners_**
+        - For other levels, it is sufficient to do the same by referring to the transfer nodes which are stored in the return value of FindNode, **corners_**
           - Since it is the page ID that is stored, PageManager::FetchPage is used to retrieve the node, and PageManager::UnpinPage is called (dirty flag=true) when the access, including updating the connection destination, is complete   
       - Moving entries
         - Basically, move the back half of the entries existing in the parent node to the new node
@@ -529,7 +529,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - What is done is basically the same as in the sequential version
   - The page ID of the transfer node is stored in **corners**, and the page ID of the node before the transfer node is stored in **predOfCorners**, as in the sequential version, but since it is necessary for splits and node deletions, the SkipListCornerInfo type is used and the update counter value is also stored
   
-- For the process after finding a node
+- Subsequent operations after finding target node
   - Get
     - Basically, the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** is called and the result is returned
       - Search within the node by binary search (the same applies to other operations)
