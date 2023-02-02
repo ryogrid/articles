@@ -229,7 +229,7 @@ For convenience of use, Value is a fixed length of 4 bytes. LSN is currently use
   - The code includes a comment [number], each of which is described below
   - At the end of the call of FindNode, the pin count of the return value "foundNode" is implemented (+1)
   
-```go:findnode_serial.go
+```go
 // Utility function to cast a pointer of type Page to a pointer of type Node
 func FetchAndCastToNode(pm *PageManager, pageId int32) *Node {
 	fetchedPage := pm.FetchPage(pageId)
@@ -400,7 +400,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - W-lock for update operations, R-lock for reference operations
     - In the code, the term "latch" is used instead of "lock" as is customary in the world of database systems
 
-```go:findnode_parallel.go
+```go
 type SkipListCornerInfo struct { // [1]
 	PageId int32
 	UpdateCounter int32
