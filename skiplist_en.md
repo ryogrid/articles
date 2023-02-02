@@ -291,9 +291,9 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 - [1] Loop for traversing from the level of the upper limit (MAX_FOWARD_LIST_LEN) in the overall Skip List level toward level 1
   - In the author's implementation, the upper limit was set to 20
     - The probability **P** in the function that determines the level of a node is set to 0.5
-  - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though sequential execution would cause wasteful processing
+  - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though wasteful processing runs in sequential execution
 - [2] A loop that linearly searches for nodes to be used for transfer at level ii
-  - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, the node one before that node is selected for transafer, and the loop ends
+  - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, a node one before the node is selected for transafer, and the loop ends
     - (If the node is reached, it is too far, so the node before the node is used to transfer to the next level)
 - [3] Consideration when node deletion is found to occur
   - Processing to be performed after discovering a transfer node
