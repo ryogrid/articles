@@ -333,28 +333,28 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - Call PageManager::UnpinPage with the new node as argument (dirty flag=true)
     - Finally, call PageManager::UnpinPage with the parent node as argument (dirty flag=true)
   - Remove
-    - Basically, the I/F of entry removal provided by the node indicated by the return value foundNode is called, and the result is the return value.
+    - Basically, the I/F of entry removal provided by the node indicated by the return value **foundNode** is called, and the result is the return value.
       - There are cases where the entry specified by Key does not exist
     - In most cases, the entry corresponding to the specified Key is deleted to complete the process, but if the number of entries in the node becomes zero as a result of the deletion, node deletion is performed
     - Node deletion
         - Node connection relationship update
           - For deletion, processes the node connected to the target node up to the height of the level of the target. processing changes next node setting to  nodes to which target node connected 
-          - What is done is generally the same as when a split occurs in Insert, except that in the case of a split, the node corresponding to the parent node is the node whose page ID is stored in index 0 of FindNode's return value **predOfCorners_**
+          - What is done is generally the same as when a split occurs in Insert, except that the node corresponding to the parent node is the node whose page ID is stored in index 0 of FindNode's return value **predOfCorners_**
         - Call PageManager::UnpinPage with the node to be deleted as an argument (dirty flag=true)
         - Deletion of the page used by the node
           - Call PageManager::DeallocatePage
     - If node deletion did not occur, PageManager::UnpinPage is called with the node indicated by **foundNode** that has finished accessing (dirty flag=true)
   - Iterator
-    - Cases in which findNode is called are at least the cases in which a starting point is specified in the range specification.
+    - Cases in which FindNode is called are at least the cases in which a starting point is specified
     - Generate SLItr type using the resulting entries
       - Iteration can be done by traversing the next node at level 1
-      - Based on this, the SLItr type can be designed as desired
-        - However, it is necessary to consider whether or not it will work according to the specification if an operation such as updating the Skip List is performed before the iterator returns all entries in the specified range, even if the iterator is generated sequentially
+      - Based on this, the SLItr type can be designed as you desired
+        - However, it is necessary to consider whether or not it will work according to the specification if an operation such as updating the Skip List is performed before the iterator returns all entries in the specified range, even if the iterator is used on not concurrent execution
     - Notes
       - In SLItr type implementations, it should be considered not to return a temporary starting point if there is no entry that matches the key specified as the starting point of the range
 
 
-### A method to make Skip List accessible in concurrent and concurrently
+### A method to make Skip List concurrently accessible 
 - THE ART of MULTIPROCESSOR PROGRAMMING - SECOND EDITION" by Maurice Herlihy, Nir Shavit, Victor Luchangco, Michael Spear
   - Commonly known as the TAoMP book. One of the bible of multi threads programming
   
