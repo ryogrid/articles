@@ -523,7 +523,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - (Newly acquired lock have already been acquired and released once in the past)
     - If the node has been updated, the search may not continue correctly, so checking if the update counter of new **pred** candidate node before releasing lock and the update counter after acquiring the lock again are the same, is needed
     - If the values of the two values do not match, it means that an update has taken place, so the search process is given up, all locks held are released, and the search process is retried from the beginning
-      - The retry should be designed to be performed by the FindNode caller. If the return value **isSuccess** is false, it indicates that a retry is necessary
+      - The retry should be designed to be performed by the caller of FindNode. If the return value **isSuccess** is false, it indicates that a retry is necessary
     - If two values match, the search process continues as is
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - What is done is basically the same as in the sequential version
@@ -533,8 +533,8 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - Get
     - Basically, the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** is called and the result is returned
       - Search within the node by binary search (the same applies to other operations)
-      - (The same applies to other operations) There may be cases where no entry exists which has key specified key matches with
-    - PageManager::UnpinPage is called with the node indicated by **foundNode** as the argument after the last access, and in addition, the R-lock is released
+      - (The same applies to other operations) There may be cases where no entry exists which has key matches witch specified key
+      - When acces is fineshed, the R-lock is released and PageManager::UnpinPage is called (dirty flag=false)
   - Insert
     - Basically, it only calls the I/F for adding an entry provided by the node indicated by the return value **foundNode** and returns the result as the return value
       - However, unlike the sequential version, there are cases where the operation fails, so an additional return value is required to tell the caller that a retry is necessary
