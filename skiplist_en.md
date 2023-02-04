@@ -507,24 +507,24 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - What is done is basically the same as the sequential version
   - However, the difference is that it proceeds while acquiring and releasing locks to support concurrent access
     - If there is no node with a lock, there is a possibility that the search process will not be executed correctly if a node is updated by another thread, so the search always proceeds with one node holding a lock at least
-    - However, if the search proceeds while acquiring a new lock without releasing the held lock, other threads' access to the node holding the lock will be interfered with (≒lock contention), and the throughput of multiple threads in concurrent access will be reduced, so only the minimum necessary lock is held. Therefore, only the minimum necessary amount of locks are retained and proceed
-      - In order to keep locks to the minimum necessary, a new node's lock is acquired while the original lock is retained, and the original lock is released
+    - However, if the search proceeds while acquiring a new lock without releasing the held lock, other threads' access to the node holding the lock will be interfered with (= lock contention), and the throughput of multiple threads in concurrent access will be reduced, so only the minimum necessary amount of locks are retained and proceed
+      - In order to keep locks to the minimum necessary, a new node's lock is acquired while the prior lock is retained, and the prior lock is released
       - The exception is when a node with a newly acquired lock is found to be unnecessary for the continuation of the search process (the case referred to as "too much" in the sequential version), in which case the newly acquired lock is released and the search process continues
-    - In the case of an update operation, the node proceeds while acquiring the W lock, and in the case of a reference operation, the node proceeds while acquiring the R lock
-      - Since it is basically impossible to replace the R-lock with a W-lock, update operations that require a W-lock for the final update target will proceed by acquiring the W-lock, which is an exclusive lock
+    - In the case of an update operation, the node proceeds while acquiring the W-lock, and in the case of a reference operation, the node proceeds while acquiring the R-lock
+      - Since it is basically impossible to replace the R-lock with a W-lock, so update operations require a W-lock for the final update target will proceed by acquiring the W-lock, which is an exclusive lock
       - (With some ingenuity, it is possible to proceed with the R-lock at least up to level 1, but this is complicated by the fact that the search process must be retried from the beginning in the event of a failure to switch locks)
-    - (Since this is required in [3] and [4], when moving forward, store the page ID of the pred in predOfpredId and the value of the update counter of the pred in predOfpredCounter)
-      - The update counter is a counter managed by the page to determine whether the node has been updated or not.
+    - In [3] and [4], when moving forward, store the page ID of the **pred** in **predOfpredId** and the value of the update counter of the **pred** in **predOfpredCounter**
+      - The update counter is a counter managed by the page to check whether the node has been updated or not
       - The update counter is incremented when an update operation is performed on a node
 - [3] Consideration when node deletion is found to occur
   - This is basically the same as the sequential version
-  - However, since simply moving the current location backward would violate the order in which locks are acquired, additional considerations are needed to avoid this
-    - First, all locks held by the node are released, and then locks are acquired on nodes that are behind (closer to the first node) in the list and need new locks
-      - (Newly acquired locks are nodes that have already been acquired and released in the past)
-    - If the node has been updated, the search may not continue correctly, so it checks if the update counter stored at the last pass and the update counter after acquiring the lock again are the same
-    - If the values of the two update counters do not match, it means that an update has taken place, so the search process is given up, all locks held are released, and the search process is retried from the beginning
+  - However, since simply moving the current location backward would violate the order in which locks are acquired, additional considerations are needed to avoid the violation
+    - First, locks of current **pred** are released, and then a lock of a node which is behind (closer to the first node) in the list is acquired as new **pred**
+      - (Newly acquired lock have already been acquired and released once in the past)
+    - If the node has been updated, the search may not continue correctly, so checking if the update counter of new **pred** candidate node before releasing lock and the update counter after acquiring the lock again are the same, is needed
+    - If the values of the two values do not match, it means that an update has taken place, so the search process is given up, all locks held are released, and the search process is retried from the beginning
       - The retry should be designed to be performed by the FindNode caller. If the return value **isSuccess** is false, it indicates that a retry is necessary
-    - If a match is found, the search process continues as is
+    - If two values match, the search process continues as is
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - What is done is basically the same as in the sequential version
   - The page ID of the transfer node is stored in **corners**, and the page ID of the node before the transfer node is stored in **predOfCorners**, as in the sequential version, but since it is necessary for splits and node deletions, the SkipListCornerInfo type is used and the update counter value is also stored
