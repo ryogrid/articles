@@ -189,7 +189,7 @@ Let me summarize before continuing.
 
 ### Algorithm for on-memory Skip List
 - The logic explained in the winning team's slides at ACM ICPC Maraton Prague 2015 was used as a basis
-  - https://cw.fel.cvut.cz/old/_media/courses/a4b36acm/maraton2015skiplist.pdf
+  - [**slide**](https://cw.fel.cvut.cz/old/_media/courses/a4b36acm/maraton2015skiplist.pdf)
   - However, the one described in this slide is an on-memory implementation and each node is associated with one entry
   - Additionaly, the implementation is not accessible concurrently
 - The following explanation assumes an understanding of the implementation presented in the "ACM ICPC Maraton Prague 2015 Winning Team's Slides"
