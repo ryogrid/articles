@@ -70,7 +70,7 @@
     - Fundamental difference may be that branch and leaf (node) locks are not separated in Skip List unlike B-tree variants
     - (I think it is necessary to take into account that there are areas that become inaccessible while rebalance is processed in the case of B-tree variants)
 - Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping
-  - (e.g., a node to be fetched to determine if current position has "gone too far" as described in later section)
+  - (e.g., a node to be fetched to determine if current location has "gone too far" as described in later section)
 - Range scan (≒iterating by specifying a range) of entries can only be performed in the direction decided at the time of data structure design
   - Although it may be possible to do it in both directions, the complexity of the logic (especially for concurrent access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
 
@@ -196,7 +196,7 @@ Let me summarize before continuing.
   - The following points are of particular importance for understanding what follows
     - How the code traverses the nodes from the first node to the node to be explored
     - What information is stored in the process of traversing a node?
-      - => List of references to the node at which position transfered
+      - => List of references to the node at which location transfered
     - What is needed to add or delete a node?
       - => processing connection info of nodes described above
  
@@ -299,8 +299,8 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - Processing to be performed after discovering a transfer node
   - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to transfer transfer at is 1, and the key of the entry matches the key to be searched for
     - This route is taken into account in cases where node deletion is to be performed as a result, and the node to be searched for has been reached at a level above 1
-    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, position transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
-    - Therefore, the route in [3] changes the node at which position transfers at the current level to the previous node, so that the above problem does not occur
+    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, location transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
+    - Therefore, the route in [3] changes the node at which location transfers at the current level to the previous node, so that the above problem does not occur
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - UnpinPage the node **curr** that has gone too far, since it will no longer be accessed
   - Store the page ID of the transfer node in **corners** and the page ID of the node before the transfer node in **predOfCorners**
@@ -503,7 +503,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 
 - [1] Structure for storing transfer node information passed in the search process
   - In the sequential version, only the page ID is stored in int32, but in the concurrent access version, the update counter must also be stored
-- [2] A loop that linearly searches for nodes at which position transfers at level ii
+- [2] A loop that linearly searches for nodes at which location transfers at level ii
   - What is done is basically the same as the sequential version
   - However, the difference is that it proceeds while acquiring and releasing locks to support concurrent access
     - If there is no node with a lock, there is a possibility that the search process will not be executed correctly if a node is updated by another thread, so the search always proceeds with one node holding a lock at least
