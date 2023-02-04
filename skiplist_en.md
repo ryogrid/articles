@@ -552,11 +552,11 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
           - Don't forget about parent nodes and new nodes also
         - **corners_** may contains same node at different levels
   - Remove
-    - Basically, what we do is the same as in the sequential version
-    - If you need to delete a node and update the connection, you can do so in the same way as described in the split section above.
+    - Basically, what you do is the same as in the sequential version
+    - If you need to delete a node and update the connection, you can do so in the same way as described in the split section above
     - Notes
-      - Note: As in the sequential version, the page IDs that need to be reconnected at level 1 are stored in the index 0 of **predOfCorners_**, but do not forget to check for updates of these as well
-      - The node to be deleted also gives up its lock, so an update check is necessary
+      - As in the sequential version, the page ID that need to be reconnected at level 1 is stored in the index 0 of **predOfCorners_**  and do not forget to check for updates of it
+      - The node to be deleted also should be checked updating
         - The node ID is stored in index 0 of **corners_**, so we can use it
       - The same node may be set at different levels in **corners_**
   - Iterator
