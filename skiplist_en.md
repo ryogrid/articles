@@ -1,4 +1,4 @@
-# Implementation of on-disk concurrent skip list for DBMS's Index
+# Implementation of on-disk concurrent skip list for DBMS Index
 - Author: [ryo_grid](https://twitter.com/ryo_grid) ([Linkedin profile](https://linkedin.com/in/ryo-kanbayashi-3a78266a))
 - The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
 - I couldn't find any web pages and books that provide same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight
@@ -391,7 +391,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - Order in which locks are acquired
       - To avoid deadlocks, the order in which locks are acquired should be the same among threads
         - For example, if the mutex is A, B, and C, and the order is A->B->C, A->C is OK, but B->A, C->B is not         
-        - In Skip List, the nodes are connected from the first node to the last node, so you should not follow that order
+        - In Skip List, the nodes are connected from the head node to the last node, so you only need to follow that order
     - Lock retention
       - After starting access to the Skip List, always hold the lock of at least one node, except when split and some processes for node deletion are being performed, and release the lock after the access is completed. When retrying (see below), all locks are released in the same way
 - Node search process
