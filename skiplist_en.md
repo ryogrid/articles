@@ -534,21 +534,21 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - Basically, the I/F of the entry acquisition provided by the node indicated by the return value **foundNode** is called and the result is returned
       - Search within the node by binary search (the same applies to other operations)
       - (The same applies to other operations) There may be cases where no entry exists which has key matches witch specified key
-      - When acces is fineshed, the R-lock is released and PageManager::UnpinPage is called (dirty flag=false)
+      - When acces is fineshed, the R-lock is released and UnpinPage is called (dirty flag=false)
   - Insert
     - Basically, it only calls the I/F for adding an entry provided by the node indicated by the return value **foundNode** and returns the result as the return value
       - However, unlike the sequential version, there are cases where the operation fails, so an additional return value is required to tell the caller that a retry is necessary
     - split
       - Basically the same as in the sequential version
-      - However, when updating connection relations, the lock acquisition order convention is violated, so as in the case of node search [3], after releasing all locks held, locks on each node are acquired one by one, checked for updates, and if there are any updates, a retry is performed from node search, and if there are no node which has updates, all checked nodes connection are updated appropriately with all locks retained, and then releases all locks
-        - However, if the check result is OK, the lock on the parent node must not be released until the Insert process is completed.
-        - Similarly, calling UnpinPage is also not allowed, since the total pin count is +2 at the end of the Insert process
+      - However, when updating connection relations, the lock acquisition order convention is needd to be cosindered, so as in the case of node search [3], after releasing all locks held, locks on each node are acquired one by one, checked for updates, and if there are any updates, a retry is performed from node search, and if there are no node which has updates, all checked nodes connection are updated appropriately with all locks retained, and then releases all locks
+        - However, if all update checking is OK, the lock of the parent node must not be released until the insert process is completed
+        - Similarly, calling UnpinPage is also not allowed, since the total pin count of parent node is +2 at the end of the insert process
       - Notes
         - Remember that the parent node must also be checked for updates
-        - A new node should be locked immediately after creation, and should not be released until the Insert process is finished. Do not forget to UnpinPage when releasing the lock
+        - A new node should be locked immediately after creation, and should not be released until the Insert process is finished. Do not forget to UnpinPage when releasing the lock also
         - Although it is necessary to release all the locks held once, the pin of the parent node must be left up, otherwise cache out and in will occur, and the address of the reference obtained by fetching will change, which will cause trouble
-          - And if you forget to drop the pin you left up in UnpinPage, it will also be a hassle
-        - Don't forget to increment the update counter and UnpinPage (dirty flag=true) the node that has been reconnected.
+          - And if you forget to drop the pin you left up with UnpinPage, it will also cause problem
+        - Don't forget to increment the update counter and UnpinPage (dirty flag=true) the node that has been updated connection
           - Don't forget about parent nodes and new nodes also
         - **corners_** may contains same node at different levels
   - Remove
