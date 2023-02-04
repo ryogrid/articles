@@ -300,7 +300,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the key of the entry matches the key to be searched for
     - This route is taken into account in cases where node deletion is to be performed as a result, and the node to be searched for has been reached at a level above 1
     - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, node transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
-    - Therefore, the route in [3] changes the node to be transferred at the current level to the previous node, so that the above problem does not occur
+    - Therefore, the route in [3] changes the node at which transfers at the current level to the previous node, so that the above problem does not occur
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - UnpinPage the node **curr** that has gone too far, since it will no longer be accessed
   - Store the page ID of the transfer node in **corners** and the page ID of the node before the transfer node in **predOfCorners**
@@ -384,10 +384,10 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 
 ### Apply the concurrent access method described in the TAoMP book to the multiple-entry per node version
 - This section focuses on the processing required to support concurrent access for the sequential version and points to be noted when supporting concurrent access
-- Fundamentals of exclusive control Design
+- Fundamentals of exclusive control design
     - Methods of exclusive control
-      - Read-write locking (Mutex capable) is used.
-        - Mutexes that are reentrant (the same thread does not block even if it acquires the same lock multiple times without releasing it) should not be used, as performance will be degraded in principle
+      - Read-write locking is used.
+        - Mutexes that are reentrant (the same thread does not block even if it acquires the same lock multiple times without releasing it) should not be used, as performance will be degraded
     - Order in which locks are acquired
       - To avoid deadlocks, the order in which locks are acquired should be the same among threads
         - For example, if the mutex is A, B, and C, and the order is A->B->C, A->C is OK, but B->A, C->B is not         
