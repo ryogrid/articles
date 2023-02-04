@@ -196,7 +196,7 @@ Let me summarize before continuing.
   - The following points are of particular importance for understanding what follows
     - How the code traverses the nodes from the first node to the node to be explored
     - What information is stored in the process of traversing a node?
-      - => List of references to the node switched to
+      - => List of references to the node which is transfered at
     - What is needed to add or delete a node?
       - => processing connection info of nodes described above
  
@@ -356,11 +356,11 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 
 ### A method to make Skip List concurrently accessible 
 - THE ART of MULTIPROCESSOR PROGRAMMING - SECOND EDITION" by Maurice Herlihy, Nir Shavit, Victor Luchangco, Michael Spear
-  - Commonly known as the TAoMP book. One of the bible of multi threads programming
+  - Commonly known as the TAoMP book. One of the bible of multi thread programming
   
 ![atomp.jpg](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/b6113459-b4ed-596a-63d9-1c0098212f0c.jpeg)
   
-- In chapter14 section3 "A lock-based concurrent skiplist" of this book, there is an example of how to construct a concurrent skip list.
+- In chapter14 section3 "A lock-based concurrent skiplist" of this book, there is an example of how to construct a concurrent skip list
   - This method was originally proposed in the following paper
     - M. Herlihy, Y. Lev, V. Luchangco, N. Shavit, [A provably correct scalable skiplist (brief announcement)](https://www.liblfds.org/downloads/white%20papers/[Skip%20List]%20-%20[Herlihy,%20Lev,%20Luchangco,%20Shavit]%20-%20A%20Provably%20Correct%20Scalable%20Concurrent%20Skip%20List.pdf), Proc. of the 10th International Conference on Principles of Distributed Systems. OPODIS 2006. 2006.
 - The following is an example implementation (in Java) of the code shown in the book
@@ -371,13 +371,13 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 ![remove.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/7b76a422-7fe2-3a4e-cd29-701a65faf3b9.png)
 ![contails.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/9a549a05-de09-b5e4-52a8-61ab417c51cd.png)
 
-- The prefix "lazy" is not limited to Skip List, but is used to refer to exclusive control methods such as the type in this example, and should be taken to mean "lazy
+- The prefix "lazy" is not limited to Skip List, but is used to refer to exclusive control methods such as the type in this example, and should be taken to mean "delayed"
 - In the book, the keyword "optimistic" is also used, but it seems more appropriate in the context of exclusive control methods
 - Although a detailed explanation of the implementation example is omitted, the point to keep in mind is the method of exclusive control, which is realized in the following manner
-  - The locks on the nodes to be updated are not held in advance, but are obtained by traversing the Skip List from the top, and only when a node needs to be added or deleted
-    - The target nodes here are all the nodes corresponding to the stations that were changed during the process of traversing the list (to use the previous example)
+  - The locks on the nodes to be updated are not held in advance. These are obtained only when a node needs to be added or deleted
+    - The target nodes here are all the nodes corresponding to the stations that were transfered at during the process of traversing (to use the analogy in past section)
   - The nodes to be updated are locked one by one, and checked to see if they have been updated by other threads
-  - If a node is found that has been updated during the process, all locks acquired are released and the process is retried from the process of traversing the skip list
+  - If a node is found that has been updated during the process, all locks acquired are released and the process is canceled. Then traversing for desired operation is retried from start 
   - If none of the nodes have been updated, the desired update process (node addition/deletion) is performed while retaining all locks acquired
 - Simply put, if this method is applied to an extended Skip List (not supported concurrent access = sequential version) in which each node holds multiple entries, it can support concurrent access
   - (Note that the implementation example cited above has only one entry per node)
