@@ -196,7 +196,7 @@ Let me summarize before continuing.
   - The following points are of particular importance for understanding what follows
     - How the code traverses the nodes from the first node to the node to be explored
     - What information is stored in the process of traversing a node?
-      - => List of references to the node which is transfered at
+      - => List of references to the node at which position transfered
     - What is needed to add or delete a node?
       - => processing connection info of nodes described above
  
@@ -297,10 +297,10 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - If reached a node which is too far, a node before the node is a node should be used to transfer to the next level
 - [3] Consideration when node deletion is found to occur
   - Processing to be performed after discovering a transfer node
-  - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to be transferred is 1, and the key of the entry matches the key to be searched for
+  - The route to be taken if the operation to be performed is "remove", the level traversed is greater than 1, the number of entries held by the node to transfer transfer at is 1, and the key of the entry matches the key to be searched for
     - This route is taken into account in cases where node deletion is to be performed as a result, and the node to be searched for has been reached at a level above 1
-    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, node transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
-    - Therefore, the route in [3] changes the node at which transfers at the current level to the previous node, so that the above problem does not occur
+    - When deleting a node, the connection relationship between nodes is updated, but if processing continues without consideration in this case, position transfering continues at the node to be deleted until reaching level 1 and nodes which should be updated connection relationship are not stored in the **predOfCornes** list appropriately. this is problem
+    - Therefore, the route in [3] changes the node at which position transfers at the current level to the previous node, so that the above problem does not occur
 - [4] Processing at the end of one loop in the normal case (the same thing is done in [3])
   - UnpinPage the node **curr** that has gone too far, since it will no longer be accessed
   - Store the page ID of the transfer node in **corners** and the page ID of the node before the transfer node in **predOfCorners**
@@ -393,10 +393,10 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
         - For example, if the mutex is A, B, and C, and the order is A->B->C, A->C is OK, but B->A, C->B is not         
         - In Skip List, the nodes are connected from the head node to the last node, so you only need to follow that order
     - Lock retention
-      - After starting access to the Skip List, always hold the lock of at least one node, except when split and some processes for node deletion are being performed, and release the lock after the access is completed. When retrying (see below), all locks are released in the same way
+      - After starting access to the Skip List, always hold the lock of at least one node, except when split and some processes for node deletion are being performed, and release the lock after the access is completed. When retrying (see below), all locks are released also
 - Node search process
   - The code contains comments [number], each of which is explained below.
-  - At the end of FindNode, if the return value isSuccess is true, the thread has acquired the R or W-lock of the returned foundNode Also, the pin count of the node is increased by +1
+  - At the end of FindNode, if the return value **isSuccess** is true, the thread has acquired the R or W-lock of the returned **foundNode** Also, the pin count of the node is increased by +1
     - W-lock for update operations, R-lock for reference operations
     - In the code, the term "latch" is used instead of "lock" as is customary in the world of database systems
 
@@ -501,12 +501,12 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 }
 ```  
 
-- [1] Structure for storing transit node information passed in the search process
+- [1] Structure for storing transfer node information passed in the search process
   - In the sequential version, only the page ID is stored in int32, but in the concurrent access version, the update counter must also be stored
-- [2] A loop that linearly searches for nodes to be transferred at level ii.
+- [2] A loop that linearly searches for nodes at which position transfers at level ii
   - What is done is basically the same as the sequential version
   - However, the difference is that it proceeds while acquiring and releasing locks to support concurrent access
-    - If there is no node with a lock, there is a possibility that the search process will not be executed correctly if a node is updated by another thread, so the search always proceeds with one node holding a lock
+    - If there is no node with a lock, there is a possibility that the search process will not be executed correctly if a node is updated by another thread, so the search always proceeds with one node holding a lock at least
     - However, if the search proceeds while acquiring a new lock without releasing the held lock, other threads' access to the node holding the lock will be interfered with (≒lock contention), and the throughput of multiple threads in concurrent access will be reduced, so only the minimum necessary lock is held. Therefore, only the minimum necessary amount of locks are retained and proceed
       - In order to keep locks to the minimum necessary, a new node's lock is acquired while the original lock is retained, and the original lock is released
       - The exception is when a node with a newly acquired lock is found to be unnecessary for the continuation of the search process (the case referred to as "too much" in the sequential version), in which case the newly acquired lock is released and the search process continues
