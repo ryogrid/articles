@@ -292,7 +292,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - In the author's implementation, the upper limit was set to 20
     - The probability **P** in the function that determines the level of a node is set to 0.5
   - In the on-memory implementation, the "highest level" of the entire Skip List was maintained and updated, and the search was started at that level. However, when concurrent access is supported, it is difficult to always update the "highest level" appropriately and make it available for reference. Therefore, the search is started from the upper level, even though wasteful processing runs in sequential execution
-- [2] A loop that linearly searches for nodes to be used for transfer at level **ii**
+- [2] A loop that linearly searches for nodes to be used for transfer at level ii
   - The keys to be searched are compared with the minimum key of each node. Since the entries are designed to be kept in ascending order, when a node with a minimum key greater than the key to be searched for is encountered, a node one before the node is selected for transafer, and the loop ends
     - If reached a node which is too far, a node before the node is a node should be used to transfer to the next level
 - [3] Consideration when node deletion is found to occur
@@ -502,7 +502,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 ```  
 
 - [1] Structure for storing transfer node information passed in the search process
-  - In the sequential version, only the page ID is stored in int32, but in the concurrent access version, the update counter must also be stored
+  - In the sequential version, only the page ID, but in the concurrent access version, the update counter must be stored also
 - [2] A loop that linearly searches for nodes at which location transfers at level ii
   - What is done is basically the same as the sequential version
   - However, the difference is that it proceeds while acquiring and releasing locks to support concurrent access
@@ -540,7 +540,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
       - However, unlike the sequential version, there are cases where the operation fails, so an additional return value is required to tell the caller that a retry is necessary
     - split
       - Basically the same as in the sequential version
-      - However, when updating connection relations, the lock acquisition order convention is violated, so as in the case of node search [3], after releasing all locks held, locks on each node are acquired one by one, checked for updates, and if there are any updates, a retry is performed from node search, and if there are no updates, all locks are released. If there is no update, it retries from node search, and if there is, it reconnects to each node with all locks retained, and then releases all locks
+      - However, when updating connection relations, the lock acquisition order convention is violated, so as in the case of node search [3], after releasing all locks held, locks on each node are acquired one by one, checked for updates, and if there are any updates, a retry is performed from node search, and if there are no node which has updates, all checked nodes connection are updated appropriately with all locks retained, and then releases all locks
         - However, if the check result is OK, the lock on the parent node must not be released until the Insert process is completed.
         - Similarly, calling UnpinPage is also not allowed, since the total pin count is +2 at the end of the Insert process
       - Notes
