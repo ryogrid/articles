@@ -588,7 +588,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
   - Therefore, lock release must be performed before UnpinPage
     - (The implementation in SamehadaDB is NG code. However, due to the PM implementation and the fact that Go is a GC language, even if the page is cached out, the instance of the Page type exists in memory until GC is run, and the reference is holded by mutex type variable which should be lock released, so the reference will not be GC'ed. Therefore there is no problem...)
 
-## [Reference] My implementation
+## [Reference] Author's implementation
 - Although there are some differences from the design described in this document, an implementation exists in RDB (SamehadaDB, made in Go language), which is being developed mainly by the author
   - Source files corresponding to the Skip List implementation and the main related source files
     - [skip_list.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list.go)
@@ -598,7 +598,7 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
     - [skip_list_iterator.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list_iterator.go)
     - [skip_list_test.go](https://github.com/ryogrid/SamehadaDB/blob/5bf82e666416617ce1d2bd0fbaf16987be73bbc7/container/skip_list/skip_list_test/skip_list_test.go)
   - [Code tree of the whole RDB](https://github.com/ryogrid/SamehadaDB/tree/5bf82e666416617ce1d2bd0fbaf16987be73bbc7)
-- The explanations in this document may have been insufficient, but even in that case, if you read the source code listed above based on the contents of this document, I hope that you will be able to create something similar (regardless of the development language).
+- The explanations in this document may be insufficient, but even in that case, if you read the source code listed above based on the contents of this document, I hope that you will be able to create something similar (regardless of the development language)
 
 # Finally
 - If you find any bugs or misses in the design or in the code examples, please feel free to point them out! 
@@ -607,4 +607,4 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 # Disclaimer
 - Author of this document doesn't guarantee that there are no errors (i.e., omissions) in the shared designs, etc., and they should be taken as reference only
   - The implementation based on the design described in this document has been carefully tested and works without any defects, but this does not guarantee that the design is error-free
-- This document is provided on the condition that the reader agrees that the author shall not be held liable for any damages incurred by the reader or any other third party as a result of any action taken by the viewer in reference to or in use of the contents of this document
+- This document is provided on the condition that the reader agrees that the author shall not be held liable for any damages incurred by the reader or any other third party's any action in reference to or in use of the contents of this document
