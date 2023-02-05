@@ -95,7 +95,12 @@
     - Any data format can be supported as possible as it is expressible in KV type, but the data format to be used as Key must be implemented with large/small comparison
   - Key data format is fixed to the type specified at the time of Skip List instantiation
   - Keys are processed as unique. Multiple entries with keys that are recognized as same value by the comparison function cannot coexist. For example, Inserting an entry with the same key overwrites the Value (Insert = UPSERT).
-    - (As a container used in RDB index, it is not usable unless it is available in the form Key -> [Value], not Key -> Value) 
+    - Aside: As a container used in RDB index, it is not usable unless it is available in the form Key -> [Value], not Key -> Value
+      - Combine the original Key and Value in a format called "Comparable Format" and treat combined data as Key'. Then Key' -> Value mapping can be used to support Key -> [Value] mapping
+       - To retrieve a set of values corresponding to an original key, generate an Iterator by specifying Key ++ **lower limit of the value range** to Key ++ **higher limit of the value range** as the key
+      - To delete a specific Key-Value combination, use Remove specifying Key'
+      - To delete all entries for an original Key, use the above method to extract all of them and then delete them one by one
+      - However, as mentioned below, the Iterator function is not atomic to other operations, and the case of using the value obtained by Iterator to perform some operation (such as deleting all entries of a specific Key above) is also not atomic if done naively with the design in this document. This is a point of concern
 - Provided operations
   - Retrieving an entry
     - SkipList::Get(key *KV) *KV
