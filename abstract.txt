@@ -1,0 +1,2 @@
+The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists.
+I couldn't find any this that provide same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight.

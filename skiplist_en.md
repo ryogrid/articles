@@ -1,5 +1,7 @@
 # Implementation of on-disk concurrent skip list for an alternative of B-tree Index
-- Author: [ryo_grid](https://twitter.com/ryo_grid) ([Linkedin profile](https://linkedin.com/in/ryo-kanbayashi-3a78266a))
+- Author: Ryo Kanbayashi (ryo.contact@gmail.com)
+
+# Introduction
 - The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
 - I couldn't find any web pages and books that provide same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight
 
@@ -363,18 +365,18 @@ func (sl *SkipList) FindNode(key *KV, opType SkipListOpType) (isSuccess bool, fo
 - THE ART of MULTIPROCESSOR PROGRAMMING - SECOND EDITION" by Maurice Herlihy, Nir Shavit, Victor Luchangco, Michael Spear
   - Commonly known as the TAoMP book. One of the bible of multi thread programming
   
-![atomp.jpg](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/b6113459-b4ed-596a-63d9-1c0098212f0c.jpeg)
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/b6113459-b4ed-596a-63d9-1c0098212f0c.jpeg" width="400px"></center>
   
 - In chapter14 section3 "A lock-based concurrent skiplist" of this book, there is an example of how to construct a concurrent skip list
   - This method was originally proposed in the following paper
     - M. Herlihy, Y. Lev, V. Luchangco, N. Shavit, [A provably correct scalable skiplist (brief announcement)](https://www.liblfds.org/downloads/white%20papers/[Skip%20List]%20-%20[Herlihy,%20Lev,%20Luchangco,%20Shavit]%20-%20A%20Provably%20Correct%20Scalable%20Concurrent%20Skip%20List.pdf), Proc. of the 10th International Conference on Principles of Distributed Systems. OPODIS 2006. 2006.
 - The following is an example implementation (in Java) of the code shown in the book
   
-![lazyskiplist.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/c61d0b80-faa8-af80-6f2a-fd91433dce55.png)
-![find.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/e9bda07d-dca6-fb74-680a-4acd7a514da6.png)
-![add.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/dd6faf77-85a7-1123-a10c-cf7afa4bded8.png)
-![remove.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/7b76a422-7fe2-3a4e-cd29-701a65faf3b9.png)
-![contails.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/9a549a05-de09-b5e4-52a8-61ab417c51cd.png)
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/c61d0b80-faa8-af80-6f2a-fd91433dce55.png" width="400px"></center>
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/e9bda07d-dca6-fb74-680a-4acd7a514da6.png" width="400px"></center>
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/dd6faf77-85a7-1123-a10c-cf7afa4bded8.png" width="400px"></center>
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/7b76a422-7fe2-3a4e-cd29-701a65faf3b9.png" width="400px"></center>
+<center><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/9a549a05-de09-b5e4-52a8-61ab417c51cd.png" width="400px"></center>
 
 - The prefix "lazy" is not limited to Skip List, but is used to refer to exclusive control methods such as the type in this example, and should be taken to mean "delayed"
 - In the book, the keyword "optimistic" is also used, but it seems more appropriate in the context of exclusive control methods
