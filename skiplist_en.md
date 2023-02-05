@@ -69,8 +69,8 @@
   - However, in the Skip List, if a thread acquires a W-lock of a node, other threads that want to pass through the locked node is blocked at the node on all levels up to the level of the node
     - Fundamental difference may be that branch and leaf (node) locks are not separated in Skip List unlike B-tree variants
     - (I think it is necessary to take into account that there are areas that become inaccessible while rebalance is processed in the case of B-tree variants)
-- Cache efficiency is poor because accesses are also made to nodes other than the final access target node, nodes needed for skipping
-  - (e.g., a node to be fetched to determine if current location has "gone too far" as described in later section)
+- Disk cache efficiency is poor than B-tree variants
+  - ["Why are skip lists not preferred over B+-trees for databases? - stackoverflow.com"](https://stackoverflow.com/a/23814116/21122315)
 - Range scan (≒iterating by specifying a range) of entries can only be performed in the direction decided at the time of data structure design
   - Although it may be possible to do it in both directions, the complexity of the logic (especially for concurrent access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
 
