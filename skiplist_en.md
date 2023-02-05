@@ -1,4 +1,4 @@
-# Implementation of on-disk concurrent skip list for an alternative of B-tree Index
+# An implementation of on-disk concurrent skip list for an alternative of B-tree Index
 - Author: Ryo Kanbayashi (ryo.contact@gmail.com)
 
 # Introduction
