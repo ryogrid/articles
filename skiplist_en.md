@@ -32,49 +32,47 @@
   - Unless a special design is adopted, the implementation should take into account the case where the rebalancing process is not a local update in a tree, but a wide-ranging update
 - Skip List
   - Skip List is relatively simple to implement because its base is just a concatenated list and no rebalancing is performed
-    - Node split and delete are necessary, but merge is not necessary
+    - Node split and delete are necessary, but merging is not necessary
 
-
-## What is on-disk concurrent Skip List in this document?
+## What is On-Disk Concurrent Skip List in This Document?
 - On-disk
-  - Take on-memory XXX is basically operated while data is still in memory
-  - On-disk XXX changes the location of the sub-element (node in the B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage, or conversely being loaded into memory
-  - It may be said that a program which is designed to efficiently handle a group of data whose total size does not fit in the memory capacity by setting up a cache area in memory and drowing on it
+  - An in-memory data structure operates on data while it is still in memory.
+  - An on-disk data structure changes the location of the sub-element (node in B-tree variants and Skip List) that handles stored data, such as being written to non-volatile storage or loaded into memory.
+  - It is a program designed to efficiently handle a group of data whose total size does not fit in memory capacity by setting up a cache area in memory and drawing on it.
 - **Concurrent Accessible**
-  - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data
-  - <=> If the entire data structure is controlled by a single lock, only one thread can access it at the same time
+   - The design of partial locking inside the data structure allows multiple threads to access the data structure at the same time (as much as possible) while maintaining the integrity of the data.
+  - <=> If the entire data structure is controlled by a single lock, only one thread can access it at the same time.
 - Skip List
 
-## Good points of Skip List (from the perspective of handling concurrent access)
-- It is relatively simple to deal with concurrent access
-- In this document, locking for exclusive control is done on a per-node granularity
-  - (In B-tree variants, tree locking may be used in some cases, but the basic principle is the same)
-- B-tree variants
-  - Implemantaton of code to perform rebalancing with appropriate exclusive control is complex (difficult to understand)
-  - It is necessary to deal with cases where the update range for rebalancing is extensive
-  - Locks must be acquired while taking care to avoid deadlocks, but the sequence itself tends to be difficult to understand
+## Good Points of Skip List (from the Perspective of Handling Concurrent Access)
+- It is relatively simple to deal with concurrent access.
+- In this document, locking for exclusive control is done on a per-node granularity.
+  - (In B-tree variants, tree locking may be used in some cases, but the basic principle is the same.)
+- B-Tree Variants
+  - Implementation of code to perform rebalancing with appropriate exclusive control is complex (difficult to understand).
+- It is necessary to deal with cases where the update range for rebalancing is extensive.
+  - Locks must be acquired while taking care to avoid deadlocks, but the sequence itself tends to be difficult to understand.
 - Skip List
-  - Lower complexity than B-tree variants
-    - In both programs, most update operations search for nodes to insert or delete data while performing exclusive control, and then update the contents of the found nodes as needed to complete the process
-    - The hardest part of the implementation is when updating one node requires updating other nodes as well...
-      - In the B-tree variants, the need for rebalancing also causes node splits and merges
-      - In the Skip List, a split occurs when there is no free space on a node to hold an entry, and a node deletion occurs when the number of entries in a node reaches zero, but since rebalancing is not performed, the process is relatively simple
-      - The necessary processing includes updating the connection information between nodes and moving the entries between nodes
-      - The base of Skip List is a simple linked list, and even if an entry is added or deleted, nodes position is never changed
+  - Lower complexity than B-Tree variants.
+    - In both programs, most update operations search for nodes to insert or delete data while performing exclusive control and then update the contents of the found nodes as needed to complete the process.
+    - The hardest part of the implementation is when updating one node requires updating other nodes as well.
+      - In the B-Tree variants, the need for rebalancing also causes node splits and merges.
+      - In the Skip List, a split occurs when there is no free space on a node to hold an entry, and a node deletion occurs when the number of entries in a node reaches zero, but since rebalancing is not performed, the process is relatively simple.
+      - The necessary processing includes updating the connection information between nodes and moving the entries between nodes.
+      - The base of Skip List is a simple linked list, and even if an entry is added or deleted, nodes' positions are never changed.
 
-## Bad points of (naive) Skip List
-- Because of its probabilistic desing and lack of rebalancing, there are not few cases where access cannot be performed in log N steps, compared to the B-tree variants
-- Efficient concurrent access is harder to achieve than B-tree variants
-  - (You had better to read the section about concurrent implementation before read here...) 
-  - On Skip List and B-tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock of a node first, it will cause a contentions with the other threads and the throughput of concurrent access decreases due to these
-  - However, in the Skip List, if a thread acquires a W-lock of a node, other threads that want to pass through the locked node is blocked at the node on all levels up to the level of the node
-    - Fundamental difference may be that branch and leaf (node) locks are not separated in Skip List unlike B-tree variants
-    - (I think it is necessary to take into account that there are areas that become inaccessible while rebalance is processed in the case of B-tree variants)
-- Disk cache efficiency is poor than B-tree variants
+## Bad Points of (Naive) Skip List
+- Because of its probabilistic design and lack of rebalancing, there are cases where access cannot be performed in log N steps, compared to the B-Tree variants.
+- Efficient concurrent access is harder to achieve than B-Tree variants.
+  - (You had better read the section about concurrent implementation before reading here...)
+  - In Skip List and B-Tree variants, the threads start their search from the same starting point, and if one of the threads that goes along the same route acquires a W-lock of a node first, it will cause contentions with the other threads, and the throughput of concurrent access decreases due to these.
+  - However, in the Skip List, if a thread acquires a W-lock of a node, other threads that want to pass through the locked node are blocked at the node on all levels up to the level of the node.
+    - The fundamental difference may be that branch and leaf (node) locks are not separated in Skip List, unlike B-Tree variants.
+    - (I think it is necessary to take into account that there are areas that become inaccessible while rebalancing is processed in the case of B-Tree variants.)
+- Disk cache efficiency is poorer than B-Tree variants.
   - ["Why are skip lists not preferred over B+-trees for databases? - stackoverflow.com"](https://stackoverflow.com/a/23814116/21122315)
-- Range scan (≒iterating by specifying a range) of entries can only be performed in the direction decided at the time of data structure design
-  - Although it may be possible to do it in both directions, the complexity of the logic (especially for concurrent access) may increase significantly if you want to achieve it without reducing the processing efficiency too much
-
+  - Range scan (≒iterating by specifying a range) of entries can only be performed in the direction decided at the time of data structure design.
+Although it may be possible to do it in both directions, the complexity of the logic (especially for concurrent access) may increase significantly if you want to achieve it without reducing the processing efficiency too much.
 
 # Explanation of the specifications and design of the on-disk concurrent Skip List created by the author
 
