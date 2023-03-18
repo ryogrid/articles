@@ -1,23 +1,24 @@
-# Implementation of on-disk concurrent skip list for an alternative of B-tree Index
+# Implementation of On-Disk Concurrent Skip List as an Alternative to B-Tree Index
 - Author: [ryo_grid](https://twitter.com/ryo_grid) ([Linkedin profile](https://linkedin.com/in/ryo-kanbayashi-3a78266a))
-- The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists
-- I couldn't find any web pages and books that provide same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight
+- The purpose of this document is to share the knowledge and findings that I have gained through the design and implementation of on-disk concurrent Skip Lists.
+- I couldn't find any web pages or books that provide the same kind of information shared in this document in a summarized form, so this document should be useful to some people as valuable knowledge and insight.
 
 # About Skip List
 
 ## What is Skip List?
-- A probabilistic data structure that realizes Key-Value store
-  - "probabilistic" data structure is unique compared to other data structures that provide similar functionality
-  - Data can be searched (got), inserted, and deleted in O (log N)
-    - The base of logarithm can be varied by design, but most are 2 or 4; the author designed it to be 2
-- stored data can be retrieved efficiently in sorted order based on the definition of the size of the data used as the Key as same as [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree)
-  - e.g.) Given Key-A and Key-B where A < B, it is possible to retrieve the values stored with x satisfying A <= x <= B in ascending order of the key
+- A probabilistic data structure that realizes a Key-Value store.
+  - The "probabilistic" data structure is unique compared to other data structures that provide similar functionality.
+  - Data can be searched (got), inserted, and deleted in O(log N).
+    - The base of logarithm can be varied by design, but most are 2 or 4. The author designed it to be 2.
+- Stored data can be retrieved efficiently in sorted order based on the definition of the size of the data used as the Key, as the same as [B+ tree](https://en.wikipedia.org/wiki/B%2B_tree).
+  - For example, given Key-A and Key-B where A < B, it is possible to retrieve the values stored with x satisfying A <= x <= B in ascending order of the key.
+
 - Overview of Data Structure
-  - Basically, it is just a concatenated list, and a linear search can be performed to reach the node that holds the desired entry
-  - However, as the name "Skip" implies, when creating a node, a path is created that allows skipping some nodes with a certain probability
-    - As a result, it is like moving from the first station on the train to the destination while taking the limited express, express, local, and local train in that order
-    - To use the above analogy, creating a path is like recognizing each different train service as a stop (among the services from each stop to express, the probability of recognizing a station as a stop is determined)
-    - Each operation is distinguished by its level, and the number of stops is smaller for those with higher levels. The level at which a train stops at each station is referred to as level 1 in this document
+  - Basically, it is just a concatenated list, and a linear search can be performed to reach the node that holds the desired entry.
+  - However, as the name "Skip" implies, when creating a node, a path is created that allows skipping some nodes with a certain probability.
+    - As a result, it is like moving from the first station on the train to the destination while taking the limited express, express, local, and local train in that order.
+    - To use the above analogy, creating a path is like recognizing each different train service as a stop (among the services from each stop to express, the probability of recognizing a station as a stop is determined).
+    - Each operation is distinguished by its level, and the number of stops is smaller for those with higher levels. The level at which a train stops at each station is referred to as level 1 in this document.
   - For details, please refer to Wikipedia's [skip list](https://en.wikipedia.org/wiki/Skip_list) page
     - The image below is from the above Wkipedia page
 ![skiplist.png](https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/12325/c22bbd02-9c52-c3ed-7edb-25d5ed0762cd.png)
